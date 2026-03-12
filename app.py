@@ -28,7 +28,7 @@ def create_app():
     def kpi_data(params):
         df  = aplicar_filtros(get_cursos(), params)
         ies = aplicar_filtros(get_ies(), params, prefixo="ies")
-        vagas = int(df["QT_VG_TOTAL"].sum())
+        vagas = int(df["QT_VG_TOTAL"].sum()) if "QT_VG_TOTAL" in df.columns else 0
         ing   = int(df["QT_ING"].sum())
         mat   = int(df["QT_MAT"].sum())
         conc  = int(df["QT_CONC"].sum())

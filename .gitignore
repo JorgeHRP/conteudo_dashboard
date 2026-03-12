@@ -16,3 +16,5 @@ env/
 # Sistema
 .DS_Store
 Thumbs.db
+
+loader.old.py
