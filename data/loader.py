@@ -53,8 +53,7 @@ def _load():
                     "QT_MAT", "QT_ING", "QT_CONC", "QT_VG_TOTAL", 
                     "QT_MAT_FEM", "QT_MAT_MASC", "NO_REGIAO", "SG_UF", 
                     "TP_MODALIDADE_ENSINO", "NO_CINE_AREA_GERAL", "TP_REDE",
-                    "TP_GRAU_ACADEMICO", "CO_IES", "NO_CURSO", 
-                    "NO_MICRORREGIAO", "NO_MUNICIPIO"
+                    "TP_GRAU_ACADEMICO", "CO_IES", "NO_CURSO", "NO_MUNICIPIO"
                 ]
                 cursos = pd.read_parquet(cursos_path, columns=cols_cursos, engine='pyarrow')
                 
