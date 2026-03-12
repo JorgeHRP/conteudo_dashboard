@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Novo Usuário' if action == 'novo' else 'Editar Usuário' }} — Conteúdo Insights{% endblock %}
+{% block page_title %}{{ 'Novo Usuário' if action == 'novo' else 'Editar Usuário' }}{% endblock %}
+{% block page_crumb %}ADMINISTRAÇÃO · USUÁRIOS{% endblock %}
+
+{% block content %}
+<div class="admin-wrap" style="max-width:560px">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert-{{ 'ok' if cat == 'ok' else 'err' }}" style="margin-bottom:14px">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if action == 'novo' %}
+
+  <form method="POST">
+    <input type="hidden" name="action" value="save">
+    <div class="fg"><label>Usuário</label><input type="text" name="username" required autofocus placeholder="nome.usuario"></div>
+    <div class="fg"><label>Email</label><input type="email" name="email" placeholder="email@exemplo.com"></div>
+    <div class="fg"><label>Senha</label><input type="password" name="password" required placeholder="••••••••"></div>
+    <div class="fg">
+      <label>Role</label>
+      <select name="role" id="role-sel" onchange="toggleModulos()">
+        <option value="viewer">VIEWER</option>
+        <option value="analista">ANALISTA</option>
+        <option value="admin">ADMIN</option>
+      </select>
+    </div>
+
+    <div id="mod-box" style="margin-bottom:14px">
+      <label style="font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);display:block;margin-bottom:8px">Módulos Liberados</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        {% for m in modulos %}
+        <label style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.7rem;color:var(--tx1);cursor:pointer">
+          <input type="checkbox" name="modulos" value="{{ m }}" checked style="accent-color:var(--green)"> {{ m }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button type="submit" class="btn-primary" style="width:auto;padding:8px 20px">CRIAR USUÁRIO</button>
+      <a href="{{ url_for('admin_users') }}" class="btn-secondary">CANCELAR</a>
+    </div>
+  </form>
+
+  {% else %}
+
+  <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)">
+    <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);margin-bottom:4px">USUÁRIO</div>
+    <div style="font-family:var(--mono);font-size:1rem;font-weight:500;color:var(--tx0)">{{ edit_user.username }}</div>
+    <div style="font-family:var(--mono);font-size:.68rem;color:var(--tx2);margin-top:2px">{{ edit_user.email or '—' }}</div>
+  </div>
+
+  <form method="POST">
+    <input type="hidden" name="action" value="save">
+    <div class="fg">
+      <label>Role</label>
+      <select name="role" id="role-sel" onchange="toggleModulos()">
+        <option value="viewer"   {{ 'selected' if edit_user.role == 'viewer' }}>VIEWER</option>
+        <option value="analista" {{ 'selected' if edit_user.role == 'analista' }}>ANALISTA</option>
+        <option value="admin"    {{ 'selected' if edit_user.role == 'admin' }}>ADMIN</option>
+      </select>
+    </div>
+
+    <div id="mod-box" style="margin-bottom:14px;{{ 'display:none' if edit_user.role != 'viewer' }}">
+      <label style="font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tx2);display:block;margin-bottom:8px">Módulos Liberados</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        {% for m in modulos %}
+        <label style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.7rem;color:var(--tx1);cursor:pointer">
+          <input type="checkbox" name="modulos" value="{{ m }}" {{ 'checked' if m in user_modulos }} style="accent-color:var(--green)"> {{ m }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary" style="width:auto;padding:8px 20px">SALVAR</button>
+  </form>
+
+  <form method="POST" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+    <input type="hidden" name="action" value="toggle_ativo">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:var(--mono);font-size:.62rem;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase">Status da conta</div>
+        <span class="tag {{ 'tag-on' if edit_user.ativo == 'true' else 'tag-off' }}" style="margin-top:4px;display:inline-flex">
+          {{ 'ATIVO' if edit_user.ativo == 'true' else 'INATIVO' }}
+        </span>
+      </div>
+      <button type="submit" class="{{ 'btn-danger' if edit_user.ativo == 'true' else 'btn-secondary' }}">
+        {{ 'DESATIVAR' if edit_user.ativo == 'true' else 'ATIVAR' }}
+      </button>
+    </div>
+  </form>
+
+  <form method="POST" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+    <input type="hidden" name="action" value="reset_password">
+    <div class="fg"><label>Nova Senha</label><input type="password" name="new_password" placeholder="••••••••"></div>
+    <button type="submit" class="btn-secondary">REDEFINIR SENHA</button>
+  </form>
+
+  <div style="margin-top:20px">
+    <a href="{{ url_for('admin_users') }}" class="btn-secondary">← VOLTAR</a>
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleModulos(){
+  const role = document.getElementById('role-sel').value;
+  const box  = document.getElementById('mod-box');
+  if(box) box.style.display = role === 'viewer' ? 'block' : 'none';
+}
+toggleModulos();
+</script>
+{% endblock %}

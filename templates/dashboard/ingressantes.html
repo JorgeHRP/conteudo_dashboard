@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Ingressantes — Conteúdo Insights{% endblock %}
+{% block page_title %}Ingressantes{% endblock %}
+{% block page_crumb %}CENSO · 2024 · INGRESSANTES{% endblock %}
+
+{% block filters %}
+<div class="fbar">
+  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span><select class="fi-sel" id="f-mod"><option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option></select></div>
+  <div class="fi"><span class="fi-lbl">ÁREA</span><select class="fi-sel" id="f-area"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="f-act">
+    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid g-5050">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Por Área de Conhecimento</span><span class="ph-tag">TOP 10 · INGRESSANTES</span></div>
+    <div class="pb"><div class="cload" id="l-area"><div class="spin"></div>CARREGANDO</div><canvas id="c-area" style="display:none;max-height:300px"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Por Região</span><span class="ph-tag">DISTRIBUIÇÃO</span></div>
+    <div class="pb"><div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div><canvas id="c-reg" style="display:none"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+function v(id){ const e=document.getElementById(id); return e?e.value:''; }
+function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),area:v('f-area'),rede:v('f-rede')} }
+function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
+function aplicar(){ load(); }
+function limpar(){ ['f-reg','f-uf','f-mod','f-area','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); load(); }
+
+async function load(){
+  const q=qs(gf());
+  const [area,reg]=await Promise.all([
+    fetch('/api/ingressantes/area'+q).then(r=>r.json()),
+    fetch('/api/ingressantes/regiao'+q).then(r=>r.json()),
+  ]);
+  showC('l-area','c-area'); mkBar('c-area',area.map(r=>r.area.length>36?r.area.slice(0,36)+'…':r.area),area.map(r=>r.ingressantes),true,'#22d3eeb0');
+  showC('l-reg','c-reg');   mkBar('c-reg',reg.map(r=>r.regiao),reg.map(r=>r.ingressantes),false,'#22d3eeb0');
+}
+
+async function initFilters(){
+  const d=await fetch('/api/filtros').then(r=>r.json());
+  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
+  fill('f-reg',d.regioes||[]); fill('f-uf',d.ufs||[]); fill('f-area',d.areas||[]);
+  if(d.redes) fill('f-rede',d.redes);
+}
+(async()=>{ initFilters(); load(); })();
+</script>
+{% endblock %}

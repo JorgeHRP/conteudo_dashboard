@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Top IES — Conteúdo Insights{% endblock %}
+{% block page_title %}Top IES{% endblock %}
+{% block page_crumb %}CENSO · 2024 · RANKING{% endblock %}
+
+{% block filters %}
+<div class="fbar">
+  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span><select class="fi-sel" id="f-mod"><option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="f-act">
+    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="ph"><span class="ph-title">Ranking de Instituições</span><span class="ph-tag">TOP 15 · MARKET SHARE</span></div>
+  <div class="pb np">
+    <div class="cload" id="l-ies"><div class="spin"></div>CARREGANDO</div>
+    <table class="dt" id="t-ies" style="display:none">
+      <thead><tr><th style="width:24px">#</th><th>INSTITUIÇÃO</th><th>UF</th><th class="r">MAT.</th><th class="r">ING.</th><th class="r">SHARE</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+function v(id){ const e=document.getElementById(id); return e?e.value:''; }
+function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),rede:v('f-rede')} }
+function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
+function aplicar(){ load(); }
+function limpar(){ ['f-reg','f-uf','f-mod','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); load(); }
+
+async function load(){
+  const d=await fetch('/api/ies/top'+qs(gf())).then(r=>r.json());
+  showT('l-ies','t-ies');
+  const mx=d[0]?.matriculas||1;
+  document.querySelector('#t-ies tbody').innerHTML=d.map((r,i)=>`
+    <tr><td class="rnk ${rCls(i)}">${i+1}</td>
+    <td style="font-size:.7rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ies||'—'}</td>
+    <td style="font-family:var(--mono);font-size:.62rem;color:var(--tx2)">${r.uf||'—'}</td>
+    <td class="num">${fmt(r.matriculas)}</td>
+    <td class="num" style="color:var(--tx2)">${fmt(r.ingressantes||0)}</td>
+    <td class="num" style="color:var(--green)">${r.market_share||0}%</td>
+    <td><div class="bar-t" style="width:80px"><div class="bar-f" style="width:${Math.round(r.matriculas/mx*100)}%"></div></div></td></tr>`).join('');
+}
+
+async function initFilters(){
+  const d=await fetch('/api/filtros').then(r=>r.json());
+  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
+  fill('f-reg',d.regioes||[]); fill('f-uf',d.ufs||[]);
+  if(d.redes) fill('f-rede',d.redes);
+}
+(async()=>{ initFilters(); load(); })();
+</script>
+{% endblock %}

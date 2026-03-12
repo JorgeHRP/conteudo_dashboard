@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Overview — Conteúdo Insights{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_crumb %}CENSO · 2024{% endblock %}
+
+{% block filters %}
+<div class="fbar">
+  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span>
+    <select class="fi-sel" id="f-mod">
+      <option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option>
+    </select>
+  </div>
+  <div class="fi"><span class="fi-lbl">ÁREA</span><select class="fi-sel" id="f-area"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="f-act">
+    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-strip">
+  <div class="kpi-cell"><div class="kpi-tag">Matrículas</div><div class="kpi-num pending" id="k-mat">———</div><div class="kpi-sub">total ativo</div></div>
+  <div class="kpi-cell"><div class="kpi-tag">Ingressantes</div><div class="kpi-num pending" id="k-ing">———</div><div class="kpi-sub">novos alunos</div></div>
+  <div class="kpi-cell"><div class="kpi-tag">Concluintes</div><div class="kpi-num pending" id="k-conc">———</div><div class="kpi-sub">formados</div></div>
+  <div class="kpi-cell"><div class="kpi-tag">Vagas</div><div class="kpi-num pending" id="k-vagas">———</div><div class="kpi-sub" id="k-ocpsub">ocupação —</div></div>
+  <div class="kpi-cell"><div class="kpi-tag">Cursos</div><div class="kpi-num pending" id="k-cursos">———</div><div class="kpi-sub">ativos</div></div>
+  <div class="kpi-cell"><div class="kpi-tag">Instituições</div><div class="kpi-num pending" id="k-ies">———</div><div class="kpi-sub">no filtro</div></div>
+</div>
+
+<div class="ov-bar">
+  <div class="ov-item"><span class="ov-lbl">OCUPAÇÃO</span><span class="ov-val" id="s-ocp">—</span></div>
+  <div class="ov-sep"></div>
+  <div class="ov-item"><span class="ov-lbl">PERMANÊNCIA</span><span class="ov-val" id="s-perm">—</span></div>
+  <div class="ov-sep"></div>
+  <div class="ov-item"><span class="ov-lbl">CONCLUSÃO</span><span class="ov-val" id="s-crat">—</span></div>
+  <div class="ov-sep"></div>
+  <div class="ov-item"><span class="ov-lbl">REF</span><span class="ov-val">CENSO 2024</span></div>
+</div>
+
+<div class="grid g-6040">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Matrículas por Região</span><span class="ph-tag">DISTRIBUIÇÃO</span></div>
+    <div class="pb"><div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div><canvas id="c-reg" style="display:none"></canvas></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column">
+    <div class="ph"><span class="ph-title">Modalidade</span><span class="ph-tag">PRES · EAD</span></div>
+    <div class="pb" style="flex:1">
+      <div class="cload" id="l-mod"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-mod" style="display:none;max-height:150px"></canvas>
+      <div class="dleg" id="dl-mod"></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid g-6040">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Matrículas por UF</span><span class="ph-tag">TOP 15</span></div>
+    <div class="pb"><div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div><canvas id="c-uf" style="display:none;max-height:280px"></canvas></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column">
+    <div class="ph"><span class="ph-title">Gênero</span><span class="ph-tag">DISTRIBUIÇÃO</span></div>
+    <div class="pb" style="flex:1">
+      <div class="cload" id="l-gen"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-gen" style="display:none;max-height:150px"></canvas>
+      <div class="dleg" id="dl-gen"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+const PAL = ['#a3e635','#22d3ee','#f59e0b','#a78bfa','#f87171','#34d399','#fb923c','#60a5fa'];
+
+function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),area:v('f-area'),rede:v('f-rede')} }
+function v(id){ const e=document.getElementById(id); return e?e.value:''; }
+function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
+function aplicar(){ loadKPIs(); loadCharts(); }
+function limpar(){ ['f-reg','f-uf','f-mod','f-area','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); aplicar(); }
+
+async function loadKPIs(){
+  const d = await fetch('/api/kpis'+qs(gf())).then(r=>r.json());
+  const set=(id,val)=>{const e=document.getElementById(id);if(!e)return;e.classList.remove('pending');e.textContent=val};
+  set('k-mat',   fmtK(d.total_matriculas));
+  set('k-ing',   fmtK(d.total_ingressantes));
+  set('k-conc',  fmtK(d.total_concluintes));
+  set('k-vagas', fmtK(d.total_vagas));
+  set('k-cursos',fmt(d.total_cursos));
+  set('k-ies',   fmt(d.total_ies));
+  document.getElementById('k-ocpsub').textContent = 'ocupação '+d.taxa_ocupacao+'%';
+  const s=id=>document.getElementById(id);
+  if(s('s-ocp')) s('s-ocp').textContent  = d.taxa_ocupacao+'%';
+  if(s('s-perm'))s('s-perm').textContent = d.taxa_permanencia+'%';
+  if(s('s-crat'))s('s-crat').textContent = d.taxa_conclusao+'%';
+  document.querySelectorAll('.kpi-cell').forEach((c,i)=>setTimeout(()=>c.classList.add('lit'),i*70));
+  setTicker('tk-mat',  fmtK(d.total_matriculas));
+  setTicker('tk-ing',  fmtK(d.total_ingressantes));
+  setTicker('tk-conc', fmtK(d.total_concluintes));
+  setTicker('tk-ocp',  d.taxa_ocupacao+'%');
+  setTicker('tk-perm', d.taxa_permanencia+'%');
+}
+
+async function loadCharts(){
+  const q = qs(gf());
+  const [reg,mod,gen,uf] = await Promise.all([
+    fetch('/api/overview/regiao'+q).then(r=>r.json()),
+    fetch('/api/overview/modalidade'+q).then(r=>r.json()),
+    fetch('/api/overview/genero'+q).then(r=>r.json()),
+    fetch('/api/overview/uf'+q).then(r=>r.json()),
+  ]);
+  showC('l-reg','c-reg'); mkBar('c-reg', reg.map(r=>r.regiao), reg.map(r=>r.matriculas));
+  showC('l-mod','c-mod'); mkDonut('c-mod', mod.map(r=>r.modalidade), mod.map(r=>r.matriculas), 'dl-mod');
+  showC('l-uf', 'c-uf');  mkBar('c-uf', uf.slice(0,15).map(r=>r.uf), uf.slice(0,15).map(r=>r.matriculas), true, PAL[0]+'b0');
+  showC('l-gen','c-gen'); mkDonut('c-gen', gen.map(r=>r.genero), gen.map(r=>r.valor), 'dl-gen', [PAL[3],PAL[2]]);
+}
+
+async function initFilters(){
+  const d = await fetch('/api/filtros').then(r=>r.json());
+  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
+  fill('f-reg',  d.regioes||[]);
+  fill('f-uf',   d.ufs||[]);
+  fill('f-area', d.areas||[]);
+  if(d.redes) fill('f-rede', d.redes);
+}
+
+(async()=>{ initFilters(); await loadKPIs(); loadCharts(); })();
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Funil & Taxas — Conteúdo Insights{% endblock %}
+{% block page_title %}Funil & Taxas{% endblock %}
+{% block page_crumb %}CENSO · 2024 · FUNIL{% endblock %}
+
+{% block filters %}
+<div class="fbar">
+  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span><select class="fi-sel" id="f-mod"><option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="f-act">
+    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid" style="grid-template-columns:1fr 210px;border-bottom:1px solid var(--line)">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Funil Educacional</span><span class="ph-tag">VAGAS → ING → MAT → CONC</span></div>
+    <div class="pb"><div class="cload" id="l-fun"><div class="spin"></div>CARREGANDO</div><canvas id="c-fun" style="display:none"></canvas></div>
+  </div>
+  <div class="mcol">
+    <div class="mbox"><div class="mtag">OCUPAÇÃO</div><div class="mval g" id="m-ocp">—</div><div class="mdesc">Ingressantes / Vagas</div></div>
+    <div class="mbox"><div class="mtag">PERMANÊNCIA</div><div class="mval c" id="m-per">—</div><div class="mdesc">Matrículas / Ingressantes</div></div>
+    <div class="mbox"><div class="mtag">CONCLUSÃO</div><div class="mval a" id="m-con">—</div><div class="mdesc">Concluintes / Matrículas</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+const PAL=['#a3e635','#22d3ee','#f59e0b','#a78bfa'];
+function v(id){ const e=document.getElementById(id); return e?e.value:''; }
+function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),rede:v('f-rede')} }
+function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
+function aplicar(){ load(); }
+function limpar(){ ['f-reg','f-uf','f-mod','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); load(); }
+
+async function load(){
+  const d=await fetch('/api/funil/data'+qs(gf())).then(r=>r.json());
+  showC('l-fun','c-fun'); kill('c-fun');
+  const opts=baseOpts();
+  _CH['c-fun']=new Chart(document.getElementById('c-fun'),{
+    type:'bar',
+    data:{labels:d.map(r=>r.etapa),datasets:[{data:d.map(r=>r.valor),backgroundColor:PAL.map(c=>c+'b0'),borderRadius:1,borderSkipped:false}]},
+    options:opts,
+  });
+  const vg=d[0]?.valor||1, ing=d[1]?.valor||0, mat=d[2]?.valor||0, conc=d[3]?.valor||0;
+  document.getElementById('m-ocp').textContent=pct(ing,vg);
+  document.getElementById('m-per').textContent=pct(mat,ing);
+  document.getElementById('m-con').textContent=pct(conc,mat);
+}
+
+async function initFilters(){
+  const d=await fetch('/api/filtros').then(r=>r.json());
+  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
+  fill('f-reg',d.regioes||[]); fill('f-uf',d.ufs||[]);
+  if(d.redes) fill('f-rede',d.redes);
+}
+(async()=>{ initFilters(); load(); })();
+</script>
+{% endblock %}

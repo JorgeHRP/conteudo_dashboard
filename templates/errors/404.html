@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><title>404 — Conteúdo Insights</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="display:block">
+  <div class="error-page">
+    <div class="error-code">404</div>
+    <div class="error-msg">Página não encontrada</div>
+    <a href="{{ url_for('overview') }}" class="error-back">← Voltar ao dashboard</a>
+  </div>
+</body>
+</html>
