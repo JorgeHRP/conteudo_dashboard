@@ -5,57 +5,383 @@
 
 {% block filters %}
 <div class="fbar">
-  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">MODALIDADE</span><select class="fi-sel" id="f-mod"><option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option></select></div>
-  <div class="fi"><span class="fi-lbl">ÁREA</span><select class="fi-sel" id="f-area"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REGIÃO</span>
+    <select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span>
+    <select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MICRORREGIÃO</span>
+    <select class="fi-sel" id="f-micro" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MUNICÍPIO</span>
+    <select class="fi-sel" id="f-mun" style="max-width:160px"><option value="">TODOS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span>
+    <select class="fi-sel" id="f-mod">
+      <option value="">TODAS</option>
+      <option value="1">PRESENCIAL</option>
+      <option value="2">EAD</option>
+      <option value="3">SEMI-PRESENCIAL</option>
+    </select></div>
+  <div class="fi"><span class="fi-lbl">ÁREA</span>
+    <select class="fi-sel" id="f-area" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span>
+    <select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">GRAU</span>
+    <select class="fi-sel" id="f-grau" style="max-width:140px"><option value="">TODOS</option></select></div>
+  <div class="fi"><span class="fi-lbl">ORG. ACAD.</span>
+    <select class="fi-sel" id="f-org" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi" style="position:relative">
+    <span class="fi-lbl">IES</span>
+    <input type="text" id="f-ies-input" class="fi-sel" placeholder="buscar IES…"
+           autocomplete="off" style="max-width:180px;cursor:text">
+    <input type="hidden" id="f-ies-co">
+    <div id="ies-dd" style="display:none;position:absolute;top:34px;left:0;z-index:999;
+         background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+         max-height:220px;overflow-y:auto;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    </div>
+  </div>
   <div class="f-act">
-    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-go"  onclick="aplicar()">FILTRAR</button>
     <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
   </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="grid g-5050">
-  <div class="panel">
-    <div class="ph"><span class="ph-title">Por Área de Conhecimento</span><span class="ph-tag">TOP 10 · CONCLUINTES</span></div>
-    <div class="pb"><div class="cload" id="l-area"><div class="spin"></div>CARREGANDO</div><canvas id="c-area" style="display:none;max-height:300px"></canvas></div>
+
+<!-- ── KPI STRIP ─────────────────────────────────────────────────────── -->
+<div class="kpi-strip">
+  <div class="kpi-cell">
+    <div class="kpi-tag">CONCLUINTES</div>
+    <div class="kpi-num pending" id="kv-conc">—</div>
   </div>
-  <div class="panel">
-    <div class="ph"><span class="ph-title">Por Região</span><span class="ph-tag">DISTRIBUIÇÃO</span></div>
-    <div class="pb"><div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div><canvas id="c-reg" style="display:none"></canvas></div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">FEMININO</div>
+    <div class="kpi-num pending" id="kv-fem">—</div>
+    <div class="kpi-sub" id="ks-fem">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">MASCULINO</div>
+    <div class="kpi-num pending" id="kv-masc">—</div>
+    <div class="kpi-sub" id="ks-masc">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">MATRÍCULAS (BASE)</div>
+    <div class="kpi-num pending" id="kv-mat">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">TAXA CONCLUSÃO</div>
+    <div class="kpi-num pending" id="kv-tconcl">—</div>
+    <div class="kpi-sub">concluintes / matrículas</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">CURSOS ATIVOS</div>
+    <div class="kpi-num pending" id="kv-cursos">—</div>
   </div>
 </div>
+
+<!-- ── ROW 1: Área + Região ──────────────────────────────────────────── -->
+<div class="grid g-6040">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Concluintes por Área de Conhecimento</span><span class="ph-tag">TOP 10</span></div>
+    <div class="pb">
+      <div class="cload" id="l-area"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-area" style="display:none;max-height:280px"></canvas>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Por Região</span><span class="ph-tag">VOLUME</span></div>
+    <div class="pb">
+      <div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-reg" style="display:none;max-height:280px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 2: UF ─────────────────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph"><span class="ph-title">Concluintes por Estado</span><span class="ph-tag">RANKING UF</span></div>
+    <div class="pb">
+      <div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-uf" style="display:none;max-height:200px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 3: Donuts ─────────────────────────────────────────────────── -->
+<div class="grid g-5050">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Distribuição por Modalidade</span><span class="ph-tag">PRESENCIAL · EAD · SEMI</span></div>
+    <div class="pb" style="display:flex;gap:20px;align-items:center">
+      <div style="flex:0 0 160px;height:160px">
+        <div class="cload" id="l-mod" style="height:160px"><div class="spin"></div></div>
+        <canvas id="c-mod" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-mod" style="flex:1"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Distribuição por Gênero</span><span class="ph-tag">FEM · MASC</span></div>
+    <div class="pb" style="display:flex;gap:20px;align-items:center">
+      <div style="flex:0 0 160px;height:160px">
+        <div class="cload" id="l-gen" style="height:160px"><div class="spin"></div></div>
+        <canvas id="c-gen" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-gen" style="flex:1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 4: Ranking Cursos ─────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph">
+      <span class="ph-title">Ranking de Cursos por Concluintes</span>
+      <span class="ph-tag">TOP 15 · MARKET SHARE</span>
+    </div>
+    <div class="pb np">
+      <div class="cload" id="l-cur"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-cur" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>CURSO</th>
+            <th class="r">CONCLUINTES</th>
+            <th class="r">MATRÍCULAS (BASE)</th>
+            <th class="r">TAXA CONCLUSÃO</th>
+            <th class="r">SHARE</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="tb-cur"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 5: Ranking IES ────────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph">
+      <span class="ph-title">Volume por IES</span>
+      <span class="ph-tag">TOP 15 · PARTICIPAÇÃO DE MERCADO</span>
+    </div>
+    <div class="pb np">
+      <div class="cload" id="l-ies"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-ies" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>INSTITUIÇÃO</th>
+            <th>SIGLA</th>
+            <th>UF</th>
+            <th class="r">CONCLUINTES</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">TAXA CONCLUSÃO</th>
+            <th class="r">SHARE</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="tb-ies"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-function v(id){ const e=document.getElementById(id); return e?e.value:''; }
-function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),area:v('f-area'),rede:v('f-rede')} }
-function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
-function aplicar(){ load(); }
-function limpar(){ ['f-reg','f-uf','f-mod','f-area','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); load(); }
+// ── Helpers ────────────────────────────────────────────────────────────
 
-async function load(){
-  const q=qs(gf());
-  const [area,reg]=await Promise.all([
-    fetch('/api/concluintes/area'+q).then(r=>r.json()),
-    fetch('/api/concluintes/regiao'+q).then(r=>r.json()),
+function gf() {
+  return {
+    regiao:        v('f-reg'),
+    uf:            v('f-uf'),
+    microrregiao:  v('f-micro'),
+    municipio:     v('f-mun'),
+    modalidade:    v('f-mod'),
+    area:          v('f-area'),
+    rede:          v('f-rede'),
+    grau:          v('f-grau'),
+    org_academica: v('f-org'),
+    co_ies:        v('f-ies-co'),
+  };
+}
+
+function qs(p) {
+  const q = Object.entries(p).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  return q ? '?' + q : '';
+}
+
+function aplicar() { loadAll(); }
+
+function limpar() {
+  ['f-reg','f-uf','f-micro','f-mun','f-mod','f-area','f-rede','f-grau','f-org'].forEach(id => setV(id,''));
+  setV('f-ies-co','');
+  const inp = document.getElementById('f-ies-input');
+  if (inp) inp.value = '';
+  loadAll();
+}
+
+// ── IES Typeahead ──────────────────────────────────────────────────────
+function setupIesTypeahead(lista) {
+  const input = document.getElementById('f-ies-input');
+  const dd    = document.getElementById('ies-dd');
+  const coInp = document.getElementById('f-ies-co');
+  if (!input || !dd) return;
+  let _open = false;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (q.length < 2) { dd.style.display = 'none'; return; }
+    const hits = lista.filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q)).slice(0,40);
+    if (!hits.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = hits.map(x => `
+      <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}"
+           style="padding:7px 12px;cursor:pointer;font-family:var(--mono);font-size:.68rem;
+                  color:var(--tx1);border-bottom:1px solid var(--line);
+                  display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.nome}</span>
+        <span style="color:var(--tx3);font-size:.6rem;flex-shrink:0">${x.sigla||''}</span>
+      </div>`).join('');
+    dd.querySelectorAll('.ies-opt').forEach(el => {
+      el.addEventListener('mouseenter', () => el.style.background = 'var(--bg3)');
+      el.addEventListener('mouseleave', () => el.style.background = '');
+      el.addEventListener('click', () => {
+        input.value = el.dataset.nome; coInp.value = el.dataset.co;
+        dd.style.display = 'none'; _open = false;
+      });
+    });
+    dd.style.display = 'block'; _open = true;
+  });
+  document.addEventListener('click', e => {
+    if (_open && !dd.contains(e.target) && e.target !== input) { dd.style.display = 'none'; _open = false; }
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; } });
+}
+
+// ── Init filtros ───────────────────────────────────────────────────────
+async function initFilters() {
+  const d = await fetch('/api/filtros').then(r => r.json());
+  const fill = (id, items) => { const el = document.getElementById(id); if (!el) return; items.forEach(v => el.add(new Option(v,v))); };
+  fill('f-reg',   d.regioes        || []);
+  fill('f-uf',    d.ufs            || []);
+  fill('f-micro', d.microrregioes  || []);
+  fill('f-mun',   d.municipios     || []);
+  fill('f-area',  d.areas          || []);
+  fill('f-rede',  d.redes          || []);
+  fill('f-grau',  d.graus          || []);
+  fill('f-org',   d.org_academica  || []);
+  setupIesTypeahead(d.ies_lista || []);
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────
+async function loadKPIs(q) {
+  const d = await fetch('/api/kpis' + q).then(r => r.json());
+  const set = (id, val) => { const e = document.getElementById(id); if(e){e.classList.remove('pending');e.textContent=val;} };
+  set('kv-conc',   fmtK(d.total_concluintes));
+  set('kv-mat',    fmtK(d.total_matriculas));
+  set('kv-tconcl', d.taxa_conclusao + '%');
+  set('kv-cursos', fmtK(d.total_cursos));
+
+  const g = await fetch('/api/concluintes/genero' + q).then(r => r.json());
+  const fem  = g.find(x => x.genero === 'Feminino')?.valor  || 0;
+  const masc = g.find(x => x.genero === 'Masculino')?.valor || 0;
+  const tot  = fem + masc || 1;
+  set('kv-fem',  fmtK(fem));  set('ks-fem',  pct(fem,  tot));
+  set('kv-masc', fmtK(masc)); set('ks-masc', pct(masc, tot));
+
+  document.querySelectorAll('.kpi-cell').forEach((el, i) => setTimeout(() => el.classList.add('lit'), i * 80));
+}
+
+// ── Load all ───────────────────────────────────────────────────────────
+async function loadAll() {
+  ['kv-conc','kv-fem','kv-masc','kv-mat','kv-tconcl','kv-cursos'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.add('pending'); e.textContent = '—'; }
+  });
+
+  const q = qs(gf());
+
+  const [area, reg, uf, mod, gen, cursos, ies] = await Promise.all([
+    fetch('/api/concluintes/area'      + q).then(r => r.json()),
+    fetch('/api/concluintes/regiao'    + q).then(r => r.json()),
+    fetch('/api/concluintes/uf'        + q).then(r => r.json()),
+    fetch('/api/concluintes/modalidade'+ q).then(r => r.json()),
+    fetch('/api/concluintes/genero'    + q).then(r => r.json()),
+    fetch('/api/concluintes/cursos_top'+ q).then(r => r.json()),
+    fetch('/api/concluintes/ies_top'   + q).then(r => r.json()),
   ]);
-  showC('l-area','c-area'); mkBar('c-area',area.map(r=>r.area.length>36?r.area.slice(0,36)+'…':r.area),area.map(r=>r.concluintes),true,'#f59e0bb0');
-  showC('l-reg','c-reg');   mkBar('c-reg',reg.map(r=>r.regiao),reg.map(r=>r.concluintes),false,'#f59e0bb0');
+
+  loadKPIs(q);
+
+  // Área
+  showC('l-area','c-area');
+  mkBar('c-area', area.map(r => r.area.length>40?r.area.slice(0,40)+'…':r.area), area.map(r=>r.concluintes), true);
+
+  // Região
+  showC('l-reg','c-reg');
+  mkBar('c-reg', reg.map(r=>r.regiao), reg.map(r=>r.concluintes), false, '#f59e0bb0');
+
+  // UF
+  showC('l-uf','c-uf');
+  mkBar('c-uf', uf.map(r=>r.uf), uf.map(r=>r.concluintes), false, '#a3e635b0');
+
+  // Modalidade donut
+  showC('l-mod','c-mod');
+  mkDonut('c-mod', mod.map(r=>r.modalidade), mod.map(r=>r.concluintes), 'leg-mod', ['#a3e635','#22d3ee','#f59e0b']);
+
+  // Gênero donut
+  showC('l-gen','c-gen');
+  mkDonut('c-gen', gen.map(r=>r.genero), gen.map(r=>r.valor), 'leg-gen', ['#a78bfa','#22d3ee']);
+
+  // Tabela Cursos
+  const tbCur = document.getElementById('tb-cur');
+  if (tbCur) {
+    const maxV = cursos[0]?.concluintes || 1;
+    tbCur.innerHTML = cursos.map((r,i) => {
+      const tc = r.matriculas > 0 ? (r.concluintes / r.matriculas * 100).toFixed(1) + '%' : '—';
+      return `
+      <tr>
+        <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+        <td style="font-size:.72rem">${r.curso}</td>
+        <td class="num">${Number(r.concluintes).toLocaleString('pt-BR')}</td>
+        <td class="num">${Number(r.matriculas).toLocaleString('pt-BR')}</td>
+        <td class="num" style="color:var(--amber)">${tc}</td>
+        <td class="num" style="color:var(--green)">${r.market_share}%</td>
+        <td style="padding:7px 14px">
+          <div class="bar-t"><div class="bar-f" style="width:${(r.concluintes/maxV*100).toFixed(1)}%"></div></div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  showT('l-cur','t-cur');
+
+  // Tabela IES
+  const tbIes = document.getElementById('tb-ies');
+  if (tbIes) {
+    const maxV = ies[0]?.concluintes || 1;
+    tbIes.innerHTML = ies.map((r,i) => {
+      const tc = r.matriculas > 0 ? (r.concluintes / r.matriculas * 100).toFixed(1) + '%' : '—';
+      return `
+      <tr>
+        <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+        <td style="font-size:.72rem;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ies||'—'}</td>
+        <td style="font-family:var(--mono);font-size:.66rem;color:var(--tx2)">${r.sigla||'—'}</td>
+        <td style="font-family:var(--mono);font-size:.66rem">${r.uf||'—'}</td>
+        <td class="num">${Number(r.concluintes).toLocaleString('pt-BR')}</td>
+        <td class="num">${Number(r.matriculas).toLocaleString('pt-BR')}</td>
+        <td class="num" style="color:var(--amber)">${tc}</td>
+        <td class="num" style="color:var(--green)">${r.market_share}%</td>
+        <td style="padding:7px 14px">
+          <div class="bar-t"><div class="bar-f" style="width:${(r.concluintes/maxV*100).toFixed(1)}%"></div></div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  showT('l-ies','t-ies');
 }
 
-async function initFilters(){
-  const d=await fetch('/api/filtros').then(r=>r.json());
-  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
-  fill('f-reg',d.regioes||[]); fill('f-uf',d.ufs||[]); fill('f-area',d.areas||[]);
-  if(d.redes) fill('f-rede',d.redes);
-}
-(async()=>{ initFilters(); load(); })();
+(async () => { await initFilters(); loadAll(); })();
 </script>
 {% endblock %}

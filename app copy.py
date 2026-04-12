@@ -491,14 +491,6 @@ def create_app():
             "SG_UF_IES":"uf","TP_ORGANIZACAO_ACADEMICA":"org",
         }).to_dict(orient="records"))
 
-    # ─── VERSUS ──────────────────────────────────────────────
-
-    @app.route("/dashboard/versus")
-    @auth.login_required
-    @auth.module_required("versus")
-    def versus():
-        return render_template("dashboard/versus.html", **dash_ctx("versus"))
-
     # ─── ADMIN ───────────────────────────────────────────────
 
     @app.route("/admin/users")
@@ -612,4 +604,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

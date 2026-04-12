@@ -1,64 +1,543 @@
 {% extends "base.html" %}
 {% block title %}Top IES — Conteúdo Insights{% endblock %}
 {% block page_title %}Top IES{% endblock %}
-{% block page_crumb %}CENSO · 2024 · RANKING{% endblock %}
+{% block page_crumb %}CENSO · 2024 · RANKING DE INSTITUIÇÕES{% endblock %}
 
 {% block filters %}
 <div class="fbar">
-  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">MODALIDADE</span><select class="fi-sel" id="f-mod"><option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option></select></div>
-  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REGIÃO</span>
+    <select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span>
+    <select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MICRORREGIÃO</span>
+    <select class="fi-sel" id="f-micro" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MUNICÍPIO</span>
+    <select class="fi-sel" id="f-mun" style="max-width:160px"><option value="">TODOS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span>
+    <select class="fi-sel" id="f-mod">
+      <option value="">TODAS</option>
+      <option value="1">PRESENCIAL</option>
+      <option value="2">EAD</option>
+      <option value="3">SEMI-PRESENCIAL</option>
+    </select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span>
+    <select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">ORG. ACAD.</span>
+    <select class="fi-sel" id="f-org" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">ÁREA</span>
+    <select class="fi-sel" id="f-area" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi" style="position:relative">
+    <span class="fi-lbl">IES</span>
+    <input type="text" id="f-ies-input" class="fi-sel" placeholder="buscar IES…"
+           autocomplete="off" style="max-width:180px;cursor:text">
+    <input type="hidden" id="f-ies-co">
+    <div id="ies-dd" style="display:none;position:absolute;top:34px;left:0;z-index:999;
+         background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+         max-height:220px;overflow-y:auto;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    </div>
+  </div>
   <div class="f-act">
-    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-go"  onclick="aplicar()">FILTRAR</button>
     <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
   </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="panel">
-  <div class="ph"><span class="ph-title">Ranking de Instituições</span><span class="ph-tag">TOP 15 · MARKET SHARE</span></div>
-  <div class="pb np">
-    <div class="cload" id="l-ies"><div class="spin"></div>CARREGANDO</div>
-    <table class="dt" id="t-ies" style="display:none">
-      <thead><tr><th style="width:24px">#</th><th>INSTITUIÇÃO</th><th>UF</th><th class="r">MAT.</th><th class="r">ING.</th><th class="r">SHARE</th><th></th></tr></thead>
-      <tbody></tbody>
-    </table>
+
+<!-- ── KPI STRIP ─────────────────────────────────────────────────────── -->
+<div class="kpi-strip">
+  <div class="kpi-cell">
+    <div class="kpi-tag">INSTITUIÇÕES</div>
+    <div class="kpi-num pending" id="kv-ies">—</div>
+    <div class="kpi-sub">no recorte</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">TOTAL MATRÍCULAS</div>
+    <div class="kpi-num pending" id="kv-mat">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">TOTAL INGRESSANTES</div>
+    <div class="kpi-num pending" id="kv-ing">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">TOTAL CONCLUINTES</div>
+    <div class="kpi-num pending" id="kv-conc">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">TAXA OCUPAÇÃO</div>
+    <div class="kpi-num pending" id="kv-ocp">—</div>
+    <div class="kpi-sub">ing / vagas</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">TAXA CONCLUSÃO</div>
+    <div class="kpi-num pending" id="kv-tconcl">—</div>
+    <div class="kpi-sub">conc / mat</div>
   </div>
 </div>
+
+<!-- ── ROW 1: Ranking tabela completa ───────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph">
+      <span class="ph-title">Ranking de Instituições</span>
+      <span class="ph-tag">TOP 15 · CLIQUE PARA DETALHAR</span>
+    </div>
+    <div class="pb np">
+      <div class="cload" id="l-ies"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-ies" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>INSTITUIÇÃO</th>
+            <th>SIGLA</th>
+            <th>UF</th>
+            <th>ORGANIZAÇÃO</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">INGRESSANTES</th>
+            <th class="r">CONCLUINTES</th>
+            <th class="r">OCUPAÇÃO</th>
+            <th class="r">CONCLUSÃO</th>
+            <th class="r">SHARE</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="tb-ies"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 2: Org + Rede + Modalidade (3 donuts) ────────────────────── -->
+<div class="grid g-3333">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Por Organização Acadêmica</span></div>
+    <div class="pb" style="display:flex;gap:14px;align-items:center">
+      <div style="flex:0 0 130px;height:130px">
+        <div class="cload" id="l-org" style="height:130px"><div class="spin"></div></div>
+        <canvas id="c-org" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-org" style="flex:1"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Por Rede</span><span class="ph-tag">PÚBLICA · PRIVADA</span></div>
+    <div class="pb" style="display:flex;gap:14px;align-items:center">
+      <div style="flex:0 0 130px;height:130px">
+        <div class="cload" id="l-rede" style="height:130px"><div class="spin"></div></div>
+        <canvas id="c-rede" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-rede" style="flex:1"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Por Modalidade</span><span class="ph-tag">PRES · EAD · SEMI</span></div>
+    <div class="pb" style="display:flex;gap:14px;align-items:center">
+      <div style="flex:0 0 130px;height:130px">
+        <div class="cload" id="l-mod" style="height:130px"><div class="spin"></div></div>
+        <canvas id="c-mod" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-mod" style="flex:1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 3: IES por UF ─────────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph"><span class="ph-title">Matrículas por Estado</span><span class="ph-tag">TOP 15 UF</span></div>
+    <div class="pb">
+      <div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-uf" style="display:none;max-height:200px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 4: Top cursos no recorte ─────────────────────────────────── -->
+<div class="grid g-5050">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Top Cursos no Recorte</span><span class="ph-tag">POR MATRÍCULAS</span></div>
+    <div class="pb np">
+      <div class="cload" id="l-cur"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-cur" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>CURSO</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">INGRESSANTES</th>
+            <th class="r">SHARE</th>
+            <th style="width:70px"></th>
+          </tr>
+        </thead>
+        <tbody id="tb-cur"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Top Cursos por Ingressantes</span><span class="ph-tag">DEMANDA</span></div>
+    <div class="pb">
+      <div class="cload" id="l-cur-bar"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-cur-bar" style="display:none;max-height:280px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAINEL DE DETALHE IES (aparece ao clicar na tabela) ───────────── -->
+<div id="ies-detail" style="display:none;border-top:1px solid var(--line)">
+  <div style="background:var(--bg1);border-bottom:1px solid var(--line);
+              padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <span style="font-family:var(--cond);font-weight:700;font-size:.8rem;
+                   letter-spacing:.06em;text-transform:uppercase" id="det-nome">—</span>
+      <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx2);
+                   margin-left:12px" id="det-meta">—</span>
+    </div>
+    <button onclick="fecharDetalhe()" style="background:transparent;border:1px solid var(--line2);
+            border-radius:2px;color:var(--tx2);font-family:var(--mono);font-size:.6rem;
+            padding:3px 10px;cursor:pointer;letter-spacing:.05em">✕ FECHAR</button>
+  </div>
+
+  <!-- KPIs do detalhe -->
+  <div class="kpi-strip" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi-cell">
+      <div class="kpi-tag">MATRÍCULAS</div>
+      <div class="kpi-num" id="det-mat">—</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-tag">INGRESSANTES</div>
+      <div class="kpi-num" id="det-ing">—</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-tag">CONCLUINTES</div>
+      <div class="kpi-num" id="det-conc">—</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-tag">SHARE MERCADO</div>
+      <div class="kpi-num" style="color:var(--green)" id="det-share">—</div>
+    </div>
+  </div>
+
+  <!-- Cursos da IES selecionada -->
+  <div class="grid" style="grid-template-columns:1fr">
+    <div class="panel" style="border-right:none">
+      <div class="ph">
+        <span class="ph-title">Cursos da Instituição</span>
+        <span class="ph-tag" id="det-ph-tag">—</span>
+      </div>
+      <div class="pb np">
+        <div class="cload" id="l-det-cur"><div class="spin"></div>CARREGANDO</div>
+        <table class="dt" id="t-det-cur" style="display:none">
+          <thead>
+            <tr>
+              <th style="width:28px">#</th>
+              <th>CURSO</th>
+              <th>MODALIDADE</th>
+              <th>GRAU</th>
+              <th class="r">MATRÍCULAS</th>
+              <th class="r">INGRESSANTES</th>
+              <th class="r">CONCLUINTES</th>
+              <th class="r">VAGAS</th>
+              <th class="r">OCUPAÇÃO</th>
+            </tr>
+          </thead>
+          <tbody id="tb-det-cur"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-function v(id){ const e=document.getElementById(id); return e?e.value:''; }
-function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),rede:v('f-rede')} }
-function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
-function aplicar(){ load(); }
-function limpar(){ ['f-reg','f-uf','f-mod','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); load(); }
+// ── Helpers ────────────────────────────────────────────────────────────
 
-async function load(){
-  const d=await fetch('/api/ies/top'+qs(gf())).then(r=>r.json());
-  showT('l-ies','t-ies');
-  const mx=d[0]?.matriculas||1;
-  document.querySelector('#t-ies tbody').innerHTML=d.map((r,i)=>`
-    <tr><td class="rnk ${rCls(i)}">${i+1}</td>
-    <td style="font-size:.7rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ies||'—'}</td>
-    <td style="font-family:var(--mono);font-size:.62rem;color:var(--tx2)">${r.uf||'—'}</td>
-    <td class="num">${fmt(r.matriculas)}</td>
-    <td class="num" style="color:var(--tx2)">${fmt(r.ingressantes||0)}</td>
-    <td class="num" style="color:var(--green)">${r.market_share||0}%</td>
-    <td><div class="bar-t" style="width:80px"><div class="bar-f" style="width:${Math.round(r.matriculas/mx*100)}%"></div></div></td></tr>`).join('');
+const MODAL_MAP = {'1':'Presencial','2':'EAD','3':'Semi-presencial'};
+
+function gf() {
+  return {
+    regiao:        v('f-reg'),
+    uf:            v('f-uf'),
+    microrregiao:  v('f-micro'),
+    municipio:     v('f-mun'),
+    modalidade:    v('f-mod'),
+    rede:          v('f-rede'),
+    org_academica: v('f-org'),
+    area:          v('f-area'),
+    co_ies:        v('f-ies-co'),
+  };
 }
 
-async function initFilters(){
-  const d=await fetch('/api/filtros').then(r=>r.json());
-  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
-  fill('f-reg',d.regioes||[]); fill('f-uf',d.ufs||[]);
-  if(d.redes) fill('f-rede',d.redes);
+function qs(p) {
+  const q = Object.entries(p).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  return q ? '?' + q : '';
 }
-(async()=>{ initFilters(); load(); })();
+
+function aplicar() { loadAll(); }
+
+function limpar() {
+  ['f-reg','f-uf','f-micro','f-mun','f-mod','f-rede','f-org','f-area'].forEach(id => setV(id,''));
+  setV('f-ies-co','');
+  const inp = document.getElementById('f-ies-input');
+  if (inp) inp.value = '';
+  fecharDetalhe();
+  loadAll();
+}
+
+// ── IES Typeahead ──────────────────────────────────────────────────────
+function setupIesTypeahead(lista) {
+  const input = document.getElementById('f-ies-input');
+  const dd    = document.getElementById('ies-dd');
+  const coInp = document.getElementById('f-ies-co');
+  if (!input || !dd) return;
+  let _open = false;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (q.length < 2) { dd.style.display = 'none'; return; }
+    const hits = lista
+      .filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q))
+      .slice(0, 40);
+    if (!hits.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = hits.map(x => `
+      <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}"
+           style="padding:7px 12px;cursor:pointer;font-family:var(--mono);font-size:.68rem;
+                  color:var(--tx1);border-bottom:1px solid var(--line);
+                  display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.nome}</span>
+        <span style="color:var(--tx3);font-size:.6rem;flex-shrink:0">${x.sigla||''}</span>
+      </div>`).join('');
+    dd.querySelectorAll('.ies-opt').forEach(el => {
+      el.addEventListener('mouseenter', () => el.style.background = 'var(--bg3)');
+      el.addEventListener('mouseleave', () => el.style.background = '');
+      el.addEventListener('click', () => {
+        input.value = el.dataset.nome;
+        coInp.value = el.dataset.co;
+        dd.style.display = 'none';
+        _open = false;
+      });
+    });
+    dd.style.display = 'block';
+    _open = true;
+  });
+  document.addEventListener('click', e => {
+    if (_open && !dd.contains(e.target) && e.target !== input) {
+      dd.style.display = 'none'; _open = false;
+    }
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; }
+  });
+}
+
+// ── Init filtros ───────────────────────────────────────────────────────
+async function initFilters() {
+  const d = await fetch('/api/filtros').then(r => r.json());
+  const fill = (id, items) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    items.forEach(v => el.add(new Option(v, v)));
+  };
+  fill('f-reg',   d.regioes        || []);
+  fill('f-uf',    d.ufs            || []);
+  fill('f-micro', d.microrregioes  || []);
+  fill('f-mun',   d.municipios     || []);
+  fill('f-rede',  d.redes          || []);
+  fill('f-org',   d.org_academica  || []);
+  fill('f-area',  d.areas          || []);
+  setupIesTypeahead(d.ies_lista || []);
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────
+async function loadKPIs(q) {
+  const [kpis, iesCount] = await Promise.all([
+    fetch('/api/kpis' + q).then(r => r.json()),
+    fetch('/api/ies/top' + q).then(r => r.json()),
+  ]);
+  const set = (id, val) => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.remove('pending'); e.textContent = val; }
+  };
+  set('kv-ies',    fmt(kpis.total_ies));
+  set('kv-mat',    fmtK(kpis.total_matriculas));
+  set('kv-ing',    fmtK(kpis.total_ingressantes));
+  set('kv-conc',   fmtK(kpis.total_concluintes));
+  set('kv-ocp',    kpis.taxa_ocupacao + '%');
+  set('kv-tconcl', kpis.taxa_conclusao + '%');
+  document.querySelectorAll('.kpi-cell').forEach((c, i) =>
+    setTimeout(() => c.classList.add('lit'), i * 70)
+  );
+}
+
+// ── Detalhe IES ────────────────────────────────────────────────────────
+async function abrirDetalhe(coIes, nomeIes, sigla, uf, org, mat, ing, conc, share) {
+  const det = document.getElementById('ies-detail');
+  det.style.display = 'block';
+  det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Cabeçalho
+  const nomeFull = sigla ? `${nomeIes} (${sigla})` : nomeIes;
+  document.getElementById('det-nome').textContent = nomeFull;
+  document.getElementById('det-meta').textContent =
+    [uf, org].filter(Boolean).join(' · ');
+  document.getElementById('det-ph-tag').textContent = sigla || nomeIes;
+
+  // KPIs do detalhe
+  document.getElementById('det-mat').textContent   = fmtK(mat);
+  document.getElementById('det-ing').textContent   = fmtK(ing);
+  document.getElementById('det-conc').textContent  = fmtK(conc);
+  document.getElementById('det-share').textContent = share + '%';
+
+  // Reset tabela de cursos
+  const lDet = document.getElementById('l-det-cur');
+  const tDet = document.getElementById('t-det-cur');
+  if (lDet) { lDet.style.display = 'flex'; lDet.innerHTML = '<div class="spin"></div>CARREGANDO'; }
+  if (tDet) tDet.style.display = 'none';
+
+  // Busca cursos da IES
+  const q = qs({ ...gf(), co_ies: coIes });
+  const cursos = await fetch('/api/cursos/top' + q).then(r => r.json());
+
+  const tb = document.getElementById('tb-det-cur');
+  if (tb) {
+    tb.innerHTML = cursos.map((r, i) => {
+      const ocup = r.vagas > 0 ? (r.ingressantes / r.vagas * 100).toFixed(1) + '%' : '—';
+      return `
+        <tr>
+          <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+          <td style="font-size:.72rem">${r.curso}</td>
+          <td style="font-family:var(--mono);font-size:.64rem;color:var(--tx2)">—</td>
+          <td style="font-size:.64rem;color:var(--tx2)">—</td>
+          <td class="num">${fmt(r.matriculas)}</td>
+          <td class="num">${fmt(r.ingressantes)}</td>
+          <td class="num">${fmt(r.concluintes)}</td>
+          <td class="num">${fmt(r.vagas)}</td>
+          <td class="num" style="color:var(--amber)">${ocup}</td>
+        </tr>`;
+    }).join('');
+  }
+  showT('l-det-cur', 't-det-cur');
+}
+
+function fecharDetalhe() {
+  const det = document.getElementById('ies-detail');
+  if (det) det.style.display = 'none';
+}
+
+// ── Load all ───────────────────────────────────────────────────────────
+async function loadAll() {
+  ['kv-ies','kv-mat','kv-ing','kv-conc','kv-ocp','kv-tconcl'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.add('pending'); e.textContent = '—'; }
+  });
+  fecharDetalhe();
+
+  const q = qs(gf());
+
+  const [ies, org, rede, mod, uf, cursosTop] = await Promise.all([
+    fetch('/api/ies/top'              + q).then(r => r.json()),
+    fetch('/api/matriculas/modalidade'+ q).then(r => r.json()),  // reutiliza endpoint
+    fetch('/api/matriculas/rede'      + q).then(r => r.json()),
+    fetch('/api/matriculas/modalidade'+ q).then(r => r.json()),
+    fetch('/api/matriculas/uf'        + q).then(r => r.json()),
+    fetch('/api/cursos/top'           + q).then(r => r.json()),
+  ]);
+
+  // Org acadêmica — agrupa do próprio ies
+  const orgCounts = {};
+  ies.forEach(r => { orgCounts[r.org||'Outro'] = (orgCounts[r.org||'Outro']||0) + r.matriculas; });
+  const orgData = Object.entries(orgCounts).sort((a,b) => b[1]-a[1]);
+
+  loadKPIs(q);
+
+  // ── Ranking IES ───────────────────────────────────────────────────
+  const tbIes = document.getElementById('tb-ies');
+  if (tbIes) {
+    const maxMat = ies[0]?.matriculas || 1;
+    tbIes.innerHTML = ies.map((r, i) => {
+      const ocup  = pct(r.ingressantes, r.vagas   || 0);
+      const concl = pct(r.concluintes,  r.matriculas);
+      return `
+        <tr style="cursor:pointer" onclick="abrirDetalhe(
+            '${r.co_ies}',
+            ${JSON.stringify(r.ies||'')},
+            ${JSON.stringify(r.sigla||'')},
+            ${JSON.stringify(r.uf||'')},
+            ${JSON.stringify(r.org||'')},
+            ${r.matriculas}, ${r.ingressantes}, ${r.concluintes},
+            '${r.market_share}'
+          )" title="Clique para ver detalhes">
+          <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+          <td style="font-size:.72rem;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ies||'—'}</td>
+          <td style="font-family:var(--mono);font-size:.66rem;color:var(--tx2)">${r.sigla||'—'}</td>
+          <td style="font-family:var(--mono);font-size:.66rem">${r.uf||'—'}</td>
+          <td style="font-size:.66rem;color:var(--tx2)">${r.org||'—'}</td>
+          <td class="num">${fmt(r.matriculas)}</td>
+          <td class="num">${fmt(r.ingressantes)}</td>
+          <td class="num">${fmt(r.concluintes)}</td>
+          <td class="num" style="color:var(--amber)">—</td>
+          <td class="num" style="color:var(--cyan)">—</td>
+          <td class="num" style="color:var(--green)">${r.market_share}%</td>
+          <td style="padding:7px 14px">
+            <div class="bar-t"><div class="bar-f" style="width:${(r.matriculas/maxMat*100).toFixed(1)}%"></div></div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+  showT('l-ies', 't-ies');
+
+  // ── Donut Org acadêmica ───────────────────────────────────────────
+  showC('l-org', 'c-org');
+  mkDonut('c-org', orgData.map(d => d[0]), orgData.map(d => d[1]), 'leg-org');
+
+  // ── Donut Rede ────────────────────────────────────────────────────
+  showC('l-rede', 'c-rede');
+  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'leg-rede',
+    ['#22d3ee','#a78bfa','#f59e0b','#f87171']);
+
+  // ── Donut Modalidade ──────────────────────────────────────────────
+  showC('l-mod', 'c-mod');
+  mkDonut('c-mod', mod.map(r => r.modalidade), mod.map(r => r.matriculas), 'leg-mod',
+    ['#a3e635','#22d3ee','#f59e0b']);
+
+  // ── UF barras ─────────────────────────────────────────────────────
+  showC('l-uf', 'c-uf');
+  mkBar('c-uf', uf.slice(0,15).map(r => r.uf), uf.slice(0,15).map(r => r.matriculas),
+    false, '#a3e635b0');
+
+  // ── Tabela top cursos ──────────────────────────────────────────────
+  const tbCur = document.getElementById('tb-cur');
+  if (tbCur) {
+    const maxC = cursosTop[0]?.matriculas || 1;
+    tbCur.innerHTML = cursosTop.slice(0, 15).map((r, i) => `
+      <tr>
+        <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+        <td style="font-size:.72rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.curso}</td>
+        <td class="num">${fmt(r.matriculas)}</td>
+        <td class="num">${fmt(r.ingressantes)}</td>
+        <td class="num" style="color:var(--green)">${r.market_share}%</td>
+        <td style="padding:7px 14px">
+          <div class="bar-t"><div class="bar-f" style="width:${(r.matriculas/maxC*100).toFixed(1)}%"></div></div>
+        </td>
+      </tr>`).join('');
+  }
+  showT('l-cur', 't-cur');
+
+  // ── Bar cursos por ingressantes ────────────────────────────────────
+  const ingArea = await fetch('/api/ingressantes/area' + q).then(r => r.json());
+  showC('l-cur-bar', 'c-cur-bar');
+  mkBar('c-cur-bar',
+    ingArea.map(r => r.area.length > 36 ? r.area.slice(0,36)+'…' : r.area),
+    ingArea.map(r => r.ingressantes),
+    true, '#22d3eeb0');
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────
+(async () => {
+  await initFilters();
+  loadAll();
+})();
 </script>
 {% endblock %}

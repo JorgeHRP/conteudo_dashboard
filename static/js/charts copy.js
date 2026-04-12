@@ -18,7 +18,7 @@ const setV = (id, val) => { const e = document.getElementById(id); if (e) e.valu
 function getThemeColors() {
   const dark = document.documentElement.dataset.theme !== 'light';
   return dark
-    ? { grid:'rgba(255,255,255,0.05)', tick:'#4a6070', ttbg:'#171c26', ttbrd:'rgba(255,255,255,0.08)', tttxt:'#f0f4f8', ttmut:'#4a6070', border:'#171c26' }
+    ? { grid:'rgba(255,255,255,0.05)', tick:'#4a6070', ttbg:'#111820', ttbrd:'rgba(255,255,255,0.08)', tttxt:'#f0f4f8', ttmut:'#4a6070', border:'#0d1117' }
     : { grid:'rgba(0,0,0,0.07)',       tick:'#8fa3b8', ttbg:'#ffffff',  ttbrd:'rgba(0,0,0,0.1)',       tttxt:'#0d1117',  ttmut:'#8fa3b8',  border:'#ffffff' };
 }
 

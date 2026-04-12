@@ -30,4 +30,5 @@ MODULOS = [
     "funil",
     "cursos",
     "ies",
+    "versus",
 ]

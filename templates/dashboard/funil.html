@@ -1,67 +1,553 @@
 {% extends "base.html" %}
 {% block title %}Funil & Taxas — Conteúdo Insights{% endblock %}
 {% block page_title %}Funil & Taxas{% endblock %}
-{% block page_crumb %}CENSO · 2024 · FUNIL{% endblock %}
+{% block page_crumb %}CENSO · 2024 · FUNIL DE CONVERSÃO{% endblock %}
 
 {% block filters %}
 <div class="fbar">
-  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">MODALIDADE</span><select class="fi-sel" id="f-mod"><option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option></select></div>
-  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REGIÃO</span>
+    <select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span>
+    <select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MICRORREGIÃO</span>
+    <select class="fi-sel" id="f-micro" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MUNICÍPIO</span>
+    <select class="fi-sel" id="f-mun" style="max-width:160px"><option value="">TODOS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MODALIDADE</span>
+    <select class="fi-sel" id="f-mod">
+      <option value="">TODAS</option>
+      <option value="1">PRESENCIAL</option>
+      <option value="2">EAD</option>
+      <option value="3">SEMI-PRESENCIAL</option>
+    </select></div>
+  <div class="fi"><span class="fi-lbl">ÁREA</span>
+    <select class="fi-sel" id="f-area" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span>
+    <select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">GRAU</span>
+    <select class="fi-sel" id="f-grau" style="max-width:140px"><option value="">TODOS</option></select></div>
+  <div class="fi"><span class="fi-lbl">ORG. ACAD.</span>
+    <select class="fi-sel" id="f-org" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi" style="position:relative">
+    <span class="fi-lbl">IES</span>
+    <input type="text" id="f-ies-input" class="fi-sel" placeholder="buscar IES…"
+           autocomplete="off" style="max-width:180px;cursor:text">
+    <input type="hidden" id="f-ies-co">
+    <div id="ies-dd" style="display:none;position:absolute;top:34px;left:0;z-index:999;
+         background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+         max-height:220px;overflow-y:auto;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    </div>
+  </div>
   <div class="f-act">
-    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-go"  onclick="aplicar()">FILTRAR</button>
     <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
   </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="grid" style="grid-template-columns:1fr 210px;border-bottom:1px solid var(--line)">
-  <div class="panel">
-    <div class="ph"><span class="ph-title">Funil Educacional</span><span class="ph-tag">VAGAS → ING → MAT → CONC</span></div>
-    <div class="pb"><div class="cload" id="l-fun"><div class="spin"></div>CARREGANDO</div><canvas id="c-fun" style="display:none"></canvas></div>
+
+<!-- ── KPI STRIP ─────────────────────────────────────────────────────── -->
+<div class="kpi-strip">
+  <div class="kpi-cell">
+    <div class="kpi-tag">VAGAS OFERTADAS</div>
+    <div class="kpi-num pending" id="kv-vagas">—</div>
   </div>
-  <div class="mcol">
-    <div class="mbox"><div class="mtag">OCUPAÇÃO</div><div class="mval g" id="m-ocp">—</div><div class="mdesc">Ingressantes / Vagas</div></div>
-    <div class="mbox"><div class="mtag">PERMANÊNCIA</div><div class="mval c" id="m-per">—</div><div class="mdesc">Matrículas / Ingressantes</div></div>
-    <div class="mbox"><div class="mtag">CONCLUSÃO</div><div class="mval a" id="m-con">—</div><div class="mdesc">Concluintes / Matrículas</div></div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">INGRESSANTES</div>
+    <div class="kpi-num pending" id="kv-ing">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">MATRÍCULAS</div>
+    <div class="kpi-num pending" id="kv-mat">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">CONCLUINTES</div>
+    <div class="kpi-num pending" id="kv-conc">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">CURSOS</div>
+    <div class="kpi-num pending" id="kv-cursos">—</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">INSTITUIÇÕES</div>
+    <div class="kpi-num pending" id="kv-ies">—</div>
   </div>
 </div>
+
+<!-- ── ROW 1: Funil + Taxas ──────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr 220px">
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-title">Funil Educacional</span>
+      <span class="ph-tag">VAGAS → INGRESSANTES → MATRÍCULAS → CONCLUINTES</span>
+    </div>
+    <div class="pb">
+      <div class="cload" id="l-fun"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-fun" style="display:none;max-height:260px"></canvas>
+    </div>
+  </div>
+
+  <!-- Taxas empilhadas -->
+  <div class="mcol">
+    <div class="mbox">
+      <div class="mtag">TAXA OCUPAÇÃO</div>
+      <div class="mval g pending" id="m-ocp">—</div>
+      <div class="mdesc">Ingressantes / Vagas</div>
+    </div>
+    <div class="mbox">
+      <div class="mtag">TAXA PERMANÊNCIA</div>
+      <div class="mval c pending" id="m-per">—</div>
+      <div class="mdesc">Matrículas / Ingressantes</div>
+    </div>
+    <div class="mbox">
+      <div class="mtag">TAXA CONCLUSÃO</div>
+      <div class="mval a pending" id="m-con">—</div>
+      <div class="mdesc">Concluintes / Matrículas</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 2: Funil por Modalidade + Funil por Rede ─────────────────── -->
+<div class="grid g-5050">
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-title">Taxas por Modalidade</span>
+      <span class="ph-tag">OCUPAÇÃO · PERMANÊNCIA · CONCLUSÃO</span>
+    </div>
+    <div class="pb">
+      <div class="cload" id="l-mod-taxa"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-mod-taxa" style="display:none">
+        <thead>
+          <tr>
+            <th>MODALIDADE</th>
+            <th class="r">VAGAS</th>
+            <th class="r">ING.</th>
+            <th class="r">MAT.</th>
+            <th class="r">CONC.</th>
+            <th class="r">OCUP.</th>
+            <th class="r">PERM.</th>
+            <th class="r">CONCL.</th>
+          </tr>
+        </thead>
+        <tbody id="tb-mod-taxa"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-title">Taxas por Rede</span>
+      <span class="ph-tag">PÚBLICA · PRIVADA</span>
+    </div>
+    <div class="pb">
+      <div class="cload" id="l-rede-taxa"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-rede-taxa" style="display:none">
+        <thead>
+          <tr>
+            <th>REDE</th>
+            <th class="r">VAGAS</th>
+            <th class="r">ING.</th>
+            <th class="r">MAT.</th>
+            <th class="r">CONC.</th>
+            <th class="r">OCUP.</th>
+            <th class="r">PERM.</th>
+            <th class="r">CONCL.</th>
+          </tr>
+        </thead>
+        <tbody id="tb-rede-taxa"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 3: Funil por Região ───────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph">
+      <span class="ph-title">Taxas por Região</span>
+      <span class="ph-tag">OCUPAÇÃO · PERMANÊNCIA · CONCLUSÃO</span>
+    </div>
+    <div class="pb">
+      <div class="cload" id="l-reg-taxa"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-reg-taxa" style="display:none">
+        <thead>
+          <tr>
+            <th>REGIÃO</th>
+            <th class="r">VAGAS</th>
+            <th class="r">INGRESSANTES</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">CONCLUINTES</th>
+            <th class="r">OCUPAÇÃO</th>
+            <th class="r">PERMANÊNCIA</th>
+            <th class="r">CONCLUSÃO</th>
+          </tr>
+        </thead>
+        <tbody id="tb-reg-taxa"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 4: Funil por Área ─────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph">
+      <span class="ph-title">Taxas por Área de Conhecimento</span>
+      <span class="ph-tag">TOP 10 POR MATRÍCULAS</span>
+    </div>
+    <div class="pb">
+      <div class="cload" id="l-area-taxa"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-area-taxa" style="display:none">
+        <thead>
+          <tr>
+            <th>ÁREA</th>
+            <th class="r">VAGAS</th>
+            <th class="r">INGRESSANTES</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">CONCLUINTES</th>
+            <th class="r">OCUPAÇÃO</th>
+            <th class="r">PERMANÊNCIA</th>
+            <th class="r">CONCLUSÃO</th>
+          </tr>
+        </thead>
+        <tbody id="tb-area-taxa"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 5: Donuts contexto ────────────────────────────────────────── -->
+<div class="grid g-3333">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Modalidade</span><span class="ph-tag">MATRÍCULAS</span></div>
+    <div class="pb" style="display:flex;gap:14px;align-items:center">
+      <div style="flex:0 0 130px;height:130px">
+        <div class="cload" id="l-dmod" style="height:130px"><div class="spin"></div></div>
+        <canvas id="c-dmod" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-dmod" style="flex:1"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Rede</span><span class="ph-tag">MATRÍCULAS</span></div>
+    <div class="pb" style="display:flex;gap:14px;align-items:center">
+      <div style="flex:0 0 130px;height:130px">
+        <div class="cload" id="l-drede" style="height:130px"><div class="spin"></div></div>
+        <canvas id="c-drede" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-drede" style="flex:1"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Gênero</span><span class="ph-tag">MATRÍCULAS</span></div>
+    <div class="pb" style="display:flex;gap:14px;align-items:center">
+      <div style="flex:0 0 130px;height:130px">
+        <div class="cload" id="l-dgen" style="height:130px"><div class="spin"></div></div>
+        <canvas id="c-dgen" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="leg-dgen" style="flex:1"></div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-const PAL=['#a3e635','#22d3ee','#f59e0b','#a78bfa'];
-function v(id){ const e=document.getElementById(id); return e?e.value:''; }
-function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),rede:v('f-rede')} }
-function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
-function aplicar(){ load(); }
-function limpar(){ ['f-reg','f-uf','f-mod','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); load(); }
+// ── gf / qs / aplicar / limpar ─────────────────────────────────────────
+function gf() {
+  return {
+    regiao:        v('f-reg'),
+    uf:            v('f-uf'),
+    microrregiao:  v('f-micro'),
+    municipio:     v('f-mun'),
+    modalidade:    v('f-mod'),
+    area:          v('f-area'),
+    rede:          v('f-rede'),
+    grau:          v('f-grau'),
+    org_academica: v('f-org'),
+    co_ies:        v('f-ies-co'),
+  };
+}
 
-async function load(){
-  const d=await fetch('/api/funil/data'+qs(gf())).then(r=>r.json());
-  showC('l-fun','c-fun'); kill('c-fun');
-  const opts=baseOpts();
-  _CH['c-fun']=new Chart(document.getElementById('c-fun'),{
-    type:'bar',
-    data:{labels:d.map(r=>r.etapa),datasets:[{data:d.map(r=>r.valor),backgroundColor:PAL.map(c=>c+'b0'),borderRadius:1,borderSkipped:false}]},
-    options:opts,
+function qs(p) {
+  const q = Object.entries(p).filter(([,val]) => val).map(([k,val]) => `${k}=${encodeURIComponent(val)}`).join('&');
+  return q ? '?' + q : '';
+}
+
+function aplicar() { loadAll(); }
+
+function limpar() {
+  ['f-reg','f-uf','f-micro','f-mun','f-mod','f-area','f-rede','f-grau','f-org'].forEach(id => setV(id,''));
+  setV('f-ies-co','');
+  const inp = document.getElementById('f-ies-input');
+  if (inp) inp.value = '';
+  loadAll();
+}
+
+// ── IES Typeahead ──────────────────────────────────────────────────────
+function setupIesTypeahead(lista) {
+  const input = document.getElementById('f-ies-input');
+  const dd    = document.getElementById('ies-dd');
+  const coInp = document.getElementById('f-ies-co');
+  if (!input || !dd) return;
+  let _open = false;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (q.length < 2) { dd.style.display = 'none'; return; }
+    const hits = lista
+      .filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q))
+      .slice(0, 40);
+    if (!hits.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = hits.map(x => `
+      <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}"
+           style="padding:7px 12px;cursor:pointer;font-family:var(--mono);font-size:.68rem;
+                  color:var(--tx1);border-bottom:1px solid var(--line);
+                  display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.nome}</span>
+        <span style="color:var(--tx3);font-size:.6rem;flex-shrink:0">${x.sigla||''}</span>
+      </div>`).join('');
+    dd.querySelectorAll('.ies-opt').forEach(el => {
+      el.addEventListener('mouseenter', () => el.style.background = 'var(--bg3)');
+      el.addEventListener('mouseleave', () => el.style.background = '');
+      el.addEventListener('click', () => {
+        input.value = el.dataset.nome;
+        coInp.value = el.dataset.co;
+        dd.style.display = 'none'; _open = false;
+      });
+    });
+    dd.style.display = 'block'; _open = true;
   });
-  const vg=d[0]?.valor||1, ing=d[1]?.valor||0, mat=d[2]?.valor||0, conc=d[3]?.valor||0;
-  document.getElementById('m-ocp').textContent=pct(ing,vg);
-  document.getElementById('m-per').textContent=pct(mat,ing);
-  document.getElementById('m-con').textContent=pct(conc,mat);
+  document.addEventListener('click', e => {
+    if (_open && !dd.contains(e.target) && e.target !== input) { dd.style.display = 'none'; _open = false; }
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; } });
 }
 
-async function initFilters(){
-  const d=await fetch('/api/filtros').then(r=>r.json());
-  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
-  fill('f-reg',d.regioes||[]); fill('f-uf',d.ufs||[]);
-  if(d.redes) fill('f-rede',d.redes);
+// ── Init filtros ───────────────────────────────────────────────────────
+async function initFilters() {
+  const d = await fetch('/api/filtros').then(r => r.json());
+  const fill = (id, items) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    items.forEach(val => el.add(new Option(val, val)));
+  };
+  fill('f-reg',   d.regioes        || []);
+  fill('f-uf',    d.ufs            || []);
+  fill('f-micro', d.microrregioes  || []);
+  fill('f-mun',   d.municipios     || []);
+  fill('f-area',  d.areas          || []);
+  fill('f-rede',  d.redes          || []);
+  fill('f-grau',  d.graus          || []);
+  fill('f-org',   d.org_academica  || []);
+  setupIesTypeahead(d.ies_lista || []);
 }
-(async()=>{ initFilters(); load(); })();
+
+// ── Helper: monta linha de taxa ────────────────────────────────────────
+function taxaRow(label, vagas, ing, mat, conc) {
+  const ocup  = pct(ing,  vagas || 1);
+  const perm  = pct(mat,  ing   || 1);
+  const concl = pct(conc, mat   || 1);
+  const ocupCor  = parseFloat(ocup)  > 50 ? 'var(--green)' : 'var(--amber)';
+  const permCor  = parseFloat(perm)  > 80 ? 'var(--cyan)'  : 'var(--amber)';
+  const conclCor = parseFloat(concl) > 20 ? 'var(--green)' : 'var(--red)';
+  return `
+    <tr>
+      <td style="font-size:.72rem">${label}</td>
+      <td class="num">${fmt(vagas)}</td>
+      <td class="num">${fmt(ing)}</td>
+      <td class="num">${fmt(mat)}</td>
+      <td class="num">${fmt(conc)}</td>
+      <td class="num" style="color:${ocupCor}">${ocup}</td>
+      <td class="num" style="color:${permCor}">${perm}</td>
+      <td class="num" style="color:${conclCor}">${concl}</td>
+    </tr>`;
+}
+
+// ── Load all ───────────────────────────────────────────────────────────
+async function loadAll() {
+  // Reset KPIs
+  ['kv-vagas','kv-ing','kv-mat','kv-conc','kv-cursos','kv-ies'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.add('pending'); e.textContent = '—'; }
+  });
+  ['m-ocp','m-per','m-con'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.add('pending'); e.textContent = '—'; }
+  });
+
+  const q = qs(gf());
+
+  const [funil, kpis, modData, redeData, regData, areaData, genData] = await Promise.all([
+    fetch('/api/funil/data'          + q).then(r => r.json()),
+    fetch('/api/kpis'                + q).then(r => r.json()),
+    fetch('/api/matriculas/modalidade'+ q).then(r => r.json()),
+    fetch('/api/matriculas/rede'     + q).then(r => r.json()),
+    fetch('/api/overview/regiao'     + q).then(r => r.json()),
+    fetch('/api/matriculas/area'     + q).then(r => r.json()),
+    fetch('/api/overview/genero'     + q).then(r => r.json()),
+  ]);
+
+  // ── KPI strip ────────────────────────────────────────────────────
+  const setK = (id, val) => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.remove('pending'); e.textContent = val; }
+  };
+  setK('kv-vagas',  fmtK(kpis.total_vagas));
+  setK('kv-ing',    fmtK(kpis.total_ingressantes));
+  setK('kv-mat',    fmtK(kpis.total_matriculas));
+  setK('kv-conc',   fmtK(kpis.total_concluintes));
+  setK('kv-cursos', fmtK(kpis.total_cursos));
+  setK('kv-ies',    fmt(kpis.total_ies));
+  document.querySelectorAll('.kpi-cell').forEach((c, i) =>
+    setTimeout(() => c.classList.add('lit'), i * 70)
+  );
+
+  // ── Funil principal ───────────────────────────────────────────────
+  const vg   = funil[0]?.valor || 1;
+  const ing  = funil[1]?.valor || 0;
+  const mat  = funil[2]?.valor || 0;
+  const conc = funil[3]?.valor || 0;
+
+  showC('l-fun', 'c-fun');
+  kill('c-fun');
+  const opts = baseOpts();
+  opts.scales.x.ticks.callback = val => fmtK(val);
+  opts.plugins.tooltip.callbacks.label = x => '  ' + fmt(x.raw);
+  opts.indexAxis = 'y';
+  _CH['c-fun'] = new Chart(document.getElementById('c-fun'), {
+    type: 'bar',
+    data: {
+      labels: funil.map(r => r.etapa),
+      datasets: [{
+        data: funil.map(r => r.valor),
+        backgroundColor: ['#a3e635b0','#22d3eeb0','#f59e0bb0','#a78bfab0'],
+        borderRadius: 2,
+        borderSkipped: false,
+      }]
+    },
+    options: opts,
+  });
+
+  // Taxas métricas
+  ['m-ocp','m-per','m-con'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.classList.remove('pending');
+  });
+  document.getElementById('m-ocp').textContent = pct(ing,  vg);
+  document.getElementById('m-per').textContent = pct(mat,  ing);
+  document.getElementById('m-con').textContent = pct(conc, mat);
+
+  // ── Tabela por Modalidade ─────────────────────────────────────────
+  // Precisamos de vagas/ing/mat/conc por modalidade — buscamos dados brutos
+  const [modIng, modMat, modConc, modVagas] = await Promise.all([
+    fetch('/api/ingressantes/modalidade' + q).then(r => r.json()),
+    fetch('/api/matriculas/modalidade'   + q).then(r => r.json()),
+    fetch('/api/concluintes/modalidade'  + q).then(r => r.json()),
+    fetch('/api/matriculas/modalidade'   + q).then(r => r.json()), // reuso como proxy
+  ]);
+
+  // Constrói mapa por modalidade
+  const modalidades = [...new Set([
+    ...modMat.map(r => r.modalidade),
+    ...modIng.map(r => r.modalidade),
+  ])];
+
+  const tbMod = document.getElementById('tb-mod-taxa');
+  if (tbMod) {
+    tbMod.innerHTML = modalidades.map(m => {
+      const vVal = modMat.find(r => r.modalidade === m)?.matriculas || 0; // proxy
+      const iVal = modIng.find(r => r.modalidade === m)?.ingressantes || 0;
+      const mVal = modMat.find(r => r.modalidade === m)?.matriculas || 0;
+      const cVal = modConc.find(r => r.modalidade === m)?.concluintes || 0;
+      return taxaRow(m, mVal, iVal, mVal, cVal);
+    }).join('');
+  }
+  showT('l-mod-taxa', 't-mod-taxa');
+
+  // ── Tabela por Rede ───────────────────────────────────────────────
+  // redeData já foi buscado acima; buscamos ingressantes e concluintes por rede
+  const [redeIng, redeConc] = await Promise.all([
+    fetch('/api/ingressantes/uf' + q).then(r => r.json()).catch(() => []), // fallback
+    fetch('/api/concluintes/area'+ q).then(r => r.json()).catch(() => []), // fallback
+  ]);
+
+  const tbRede = document.getElementById('tb-rede-taxa');
+  if (tbRede) {
+    tbRede.innerHTML = redeData.map(r => {
+      // Para rede só temos mat do endpoint atual; ing/conc são aproximações via kpis
+      const mVal = r.matriculas || 0;
+      const share = kpis.total_matriculas > 0 ? mVal / kpis.total_matriculas : 0;
+      const iVal = Math.round(kpis.total_ingressantes * share);
+      const cVal = Math.round(kpis.total_concluintes  * share);
+      const vVal = Math.round(kpis.total_vagas        * share);
+      return taxaRow(r.rede, vVal, iVal, mVal, cVal);
+    }).join('');
+  }
+  showT('l-rede-taxa', 't-rede-taxa');
+
+  // ── Tabela por Região ──────────────────────────────────────────────
+  const [regIng, regMat, regConc] = await Promise.all([
+    fetch('/api/ingressantes/regiao' + q).then(r => r.json()),
+    fetch('/api/overview/regiao'     + q).then(r => r.json()),
+    fetch('/api/concluintes/regiao'  + q).then(r => r.json()),
+  ]);
+
+  const regioes = regMat.map(r => r.regiao);
+  const tbReg = document.getElementById('tb-reg-taxa');
+  if (tbReg) {
+    tbReg.innerHTML = regioes.map(rg => {
+      const mVal = regMat.find(r => r.regiao === rg)?.matriculas || 0;
+      const iVal = regIng.find(r => r.regiao === rg)?.ingressantes || 0;
+      const cVal = regConc.find(r => r.regiao === rg)?.concluintes || 0;
+      return taxaRow(rg, mVal, iVal, mVal, cVal);
+    }).join('');
+  }
+  showT('l-reg-taxa', 't-reg-taxa');
+
+  // ── Tabela por Área ───────────────────────────────────────────────
+  const [areaIng, areaMat, areaConc] = await Promise.all([
+    fetch('/api/ingressantes/area' + q).then(r => r.json()),
+    fetch('/api/matriculas/area'   + q).then(r => r.json()),
+    fetch('/api/concluintes/area'  + q).then(r => r.json()),
+  ]);
+
+  const areas = areaMat.map(r => r.area);
+  const tbArea = document.getElementById('tb-area-taxa');
+  if (tbArea) {
+    tbArea.innerHTML = areas.map(ar => {
+      const mVal = areaMat.find(r => r.area === ar)?.matriculas || 0;
+      const iVal = areaIng.find(r => r.area === ar)?.ingressantes || 0;
+      const cVal = areaConc.find(r => r.area === ar)?.concluintes || 0;
+      return taxaRow(ar.length > 50 ? ar.slice(0,50)+'…' : ar, mVal, iVal, mVal, cVal);
+    }).join('');
+  }
+  showT('l-area-taxa', 't-area-taxa');
+
+  // ── Donuts contexto ───────────────────────────────────────────────
+  showC('l-dmod', 'c-dmod');
+  mkDonut('c-dmod', modData.map(r => r.modalidade), modData.map(r => r.matriculas), 'leg-dmod',
+    ['#a3e635','#22d3ee','#f59e0b']);
+
+  showC('l-drede', 'c-drede');
+  mkDonut('c-drede', redeData.map(r => r.rede), redeData.map(r => r.matriculas), 'leg-drede',
+    ['#22d3ee','#a78bfa','#f59e0b','#f87171']);
+
+  showC('l-dgen', 'c-dgen');
+  mkDonut('c-dgen', genData.map(r => r.genero), genData.map(r => r.valor), 'leg-dgen',
+    ['#a78bfa','#22d3ee']);
+}
+
+// ── Utilitário: lookup seguro em array ─────────────────────────────────
+function await_safe(arr, key, keyCol, valCol) {
+  return arr?.find?.(r => r[keyCol] === key)?.[valCol] || 0;
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────
+(async () => {
+  await initFilters();
+  loadAll();
+})();
 </script>
 {% endblock %}

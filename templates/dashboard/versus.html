@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+{% block title %}Versus — Conteúdo Insights{% endblock %}
+{% block page_title %}Versus{% endblock %}
+{% block page_crumb %}CENSO · 2024 · COMPARATIVO{% endblock %}
+
+{% block content %}
+
+<!-- ── SELETOR DE IES ─────────────────────────────────────────────────── -->
+<div style="background:var(--bg1);border-bottom:1px solid var(--line);padding:12px 14px">
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <span style="font-family:var(--mono);font-size:.6rem;color:var(--tx2);
+                 letter-spacing:.12em;text-transform:uppercase">COMPARAR ATÉ 4 INSTITUIÇÕES</span>
+    <span style="flex:1;height:1px;background:var(--line)"></span>
+    <button class="fb fb-go" onclick="comparar()" style="padding:4px 16px">COMPARAR</button>
+    <button class="fb fb-clr" onclick="limparTudo()" style="padding:4px 12px">LIMPAR</button>
+  </div>
+
+  <!-- 4 slots de seleção -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="slots">
+
+    <!-- Slot 1 -->
+    <div class="slot" data-idx="0" style="background:var(--bg2);border:1px solid var(--line2);
+         border-radius:2px;padding:8px 10px;position:relative">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:1px;background:#a3e635;flex-shrink:0"></div>
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--tx2);
+                     letter-spacing:.1em;text-transform:uppercase">IES A</span>
+      </div>
+      <input type="text" class="slot-input fi-sel" placeholder="buscar instituição…"
+             data-idx="0" autocomplete="off"
+             style="width:100%;cursor:text;font-size:.7rem;padding:4px 0">
+      <input type="hidden" class="slot-co" data-idx="0">
+      <div class="slot-dd" data-idx="0"
+           style="display:none;position:absolute;top:62px;left:0;right:0;z-index:999;
+                  background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      <div class="slot-badge" data-idx="0"
+           style="display:none;margin-top:6px;font-family:var(--mono);font-size:.6rem;
+                  color:var(--green);letter-spacing:.04em;overflow:hidden;
+                  text-overflow:ellipsis;white-space:nowrap"></div>
+    </div>
+
+    <!-- Slot 2 -->
+    <div class="slot" data-idx="1" style="background:var(--bg2);border:1px solid var(--line2);
+         border-radius:2px;padding:8px 10px;position:relative">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:1px;background:#22d3ee;flex-shrink:0"></div>
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--tx2);
+                     letter-spacing:.1em;text-transform:uppercase">IES B</span>
+      </div>
+      <input type="text" class="slot-input fi-sel" placeholder="buscar instituição…"
+             data-idx="1" autocomplete="off"
+             style="width:100%;cursor:text;font-size:.7rem;padding:4px 0">
+      <input type="hidden" class="slot-co" data-idx="1">
+      <div class="slot-dd" data-idx="1"
+           style="display:none;position:absolute;top:62px;left:0;right:0;z-index:999;
+                  background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      <div class="slot-badge" data-idx="1"
+           style="display:none;margin-top:6px;font-family:var(--mono);font-size:.6rem;
+                  color:var(--cyan);letter-spacing:.04em;overflow:hidden;
+                  text-overflow:ellipsis;white-space:nowrap"></div>
+    </div>
+
+    <!-- Slot 3 -->
+    <div class="slot" data-idx="2" style="background:var(--bg2);border:1px solid var(--line2);
+         border-radius:2px;padding:8px 10px;position:relative">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:1px;background:#f59e0b;flex-shrink:0"></div>
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--tx2);
+                     letter-spacing:.1em;text-transform:uppercase">IES C <span style="color:var(--tx3)">(opcional)</span></span>
+      </div>
+      <input type="text" class="slot-input fi-sel" placeholder="buscar instituição…"
+             data-idx="2" autocomplete="off"
+             style="width:100%;cursor:text;font-size:.7rem;padding:4px 0">
+      <input type="hidden" class="slot-co" data-idx="2">
+      <div class="slot-dd" data-idx="2"
+           style="display:none;position:absolute;top:62px;left:0;right:0;z-index:999;
+                  background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      <div class="slot-badge" data-idx="2"
+           style="display:none;margin-top:6px;font-family:var(--mono);font-size:.6rem;
+                  color:var(--amber);letter-spacing:.04em;overflow:hidden;
+                  text-overflow:ellipsis;white-space:nowrap"></div>
+    </div>
+
+    <!-- Slot 4 -->
+    <div class="slot" data-idx="3" style="background:var(--bg2);border:1px solid var(--line2);
+         border-radius:2px;padding:8px 10px;position:relative">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:1px;background:#a78bfa;flex-shrink:0"></div>
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--tx2);
+                     letter-spacing:.1em;text-transform:uppercase">IES D <span style="color:var(--tx3)">(opcional)</span></span>
+      </div>
+      <input type="text" class="slot-input fi-sel" placeholder="buscar instituição…"
+             data-idx="3" autocomplete="off"
+             style="width:100%;cursor:text;font-size:.7rem;padding:4px 0">
+      <input type="hidden" class="slot-co" data-idx="3">
+      <div class="slot-dd" data-idx="3"
+           style="display:none;position:absolute;top:62px;left:0;right:0;z-index:999;
+                  background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+                  max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      <div class="slot-badge" data-idx="3"
+           style="display:none;margin-top:6px;font-family:var(--mono);font-size:.6rem;
+                  color:var(--violet);letter-spacing:.04em;overflow:hidden;
+                  text-overflow:ellipsis;white-space:nowrap"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── ESTADO VAZIO ───────────────────────────────────────────────────── -->
+<div id="empty-state" style="display:flex;flex-direction:column;align-items:center;
+     justify-content:center;gap:12px;padding:60px 20px;color:var(--tx3)">
+  <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+    <rect x="4" y="12" width="16" height="28" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="28" y="8" width="16" height="32" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M20 24h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M22 21l-2 3 2 3M26 21l2 3-2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <span style="font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase">
+    Selecione ao menos 2 instituições para comparar
+  </span>
+</div>
+
+<!-- ── RESULTADO DA COMPARAÇÃO ───────────────────────────────────────── -->
+<div id="vs-result" style="display:none">
+
+  <!-- Cards de métricas -->
+  <div id="vs-cards" style="display:grid;gap:0;border-bottom:1px solid var(--line)"></div>
+
+  <!-- Barras agrupadas -->
+  <div class="grid g-5050">
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Matrículas vs Ingressantes vs Concluintes</span></div>
+      <div class="pb">
+        <canvas id="c-vs-bar" style="max-height:260px"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Taxas Comparadas</span><span class="ph-tag">OCUPAÇÃO · CONCLUSÃO</span></div>
+      <div class="pb">
+        <canvas id="c-vs-taxa" style="max-height:260px"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Radar -->
+  <div class="grid g-5050">
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Perfil Comparativo</span><span class="ph-tag">RADAR</span></div>
+      <div class="pb" style="display:flex;justify-content:center">
+        <canvas id="c-vs-radar" style="max-height:300px;max-width:300px"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Top 5 Cursos por IES</span><span class="ph-tag">MATRÍCULAS</span></div>
+      <div class="pb np">
+        <table class="dt" id="t-vs-cursos">
+          <thead>
+            <tr>
+              <th>IES</th>
+              <th>CURSO</th>
+              <th class="r">MATRÍCULAS</th>
+              <th class="r">SHARE</th>
+            </tr>
+          </thead>
+          <tbody id="tb-vs-cursos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Cores e labels dos slots ───────────────────────────────────────────
+const SLOT_COLORS  = ['#a3e635','#22d3ee','#f59e0b','#a78bfa'];
+const SLOT_LABELS  = ['IES A','IES B','IES C','IES D'];
+let   _iesLista    = [];
+let   _resultados  = [];   // dados buscados por slot
+
+// ── Typeahead para os 4 slots ──────────────────────────────────────────
+function setupSlots(lista) {
+  _iesLista = lista;
+  document.querySelectorAll('.slot-input').forEach(input => {
+    const idx  = input.dataset.idx;
+    const dd   = document.querySelector(`.slot-dd[data-idx="${idx}"]`);
+    const coEl = document.querySelector(`.slot-co[data-idx="${idx}"]`);
+    const bdg  = document.querySelector(`.slot-badge[data-idx="${idx}"]`);
+    let _open  = false;
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      coEl.value = '';
+      bdg.style.display = 'none';
+      if (q.length < 2) { dd.style.display = 'none'; return; }
+
+      const hits = lista
+        .filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q))
+        .slice(0, 40);
+      if (!hits.length) { dd.style.display = 'none'; return; }
+
+      dd.innerHTML = hits.map(x => `
+        <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}" data-sigla="${x.sigla||''}"
+             style="padding:7px 10px;cursor:pointer;font-family:var(--mono);font-size:.66rem;
+                    color:var(--tx1);border-bottom:1px solid var(--line);
+                    display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.nome}</span>
+          <span style="color:var(--tx3);font-size:.58rem;flex-shrink:0">${x.sigla||''}</span>
+        </div>`).join('');
+
+      dd.querySelectorAll('.ies-opt').forEach(el => {
+        el.addEventListener('mouseenter', () => el.style.background = 'var(--bg3)');
+        el.addEventListener('mouseleave', () => el.style.background = '');
+        el.addEventListener('click', () => {
+          input.value    = el.dataset.nome;
+          coEl.value     = el.dataset.co;
+          bdg.textContent = `✓ ${el.dataset.sigla || el.dataset.nome}`;
+          bdg.style.display = 'block';
+          dd.style.display  = 'none';
+          _open = false;
+        });
+      });
+      dd.style.display = 'block';
+      _open = true;
+    });
+
+    document.addEventListener('click', e => {
+      if (_open && !dd.contains(e.target) && e.target !== input) {
+        dd.style.display = 'none'; _open = false;
+      }
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; }
+    });
+  });
+}
+
+// ── Limpar tudo ────────────────────────────────────────────────────────
+function limparTudo() {
+  document.querySelectorAll('.slot-input').forEach(el => el.value = '');
+  document.querySelectorAll('.slot-co').forEach(el => el.value = '');
+  document.querySelectorAll('.slot-badge').forEach(el => el.style.display = 'none');
+  document.getElementById('vs-result').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'flex';
+  _resultados = [];
+  kill('c-vs-bar'); kill('c-vs-taxa'); kill('c-vs-radar');
+}
+
+// ── Busca dados de uma IES ─────────────────────────────────────────────
+async function fetchIES(coIes) {
+  const q = `?co_ies=${encodeURIComponent(coIes)}`;
+  const [kpis, cursosTop] = await Promise.all([
+    fetch('/api/kpis'      + q).then(r => r.json()),
+    fetch('/api/cursos/top'+ q).then(r => r.json()),
+  ]);
+  return { coIes, kpis, cursosTop };
+}
+
+// ── Comparar ───────────────────────────────────────────────────────────
+async function comparar() {
+  const slots = [0,1,2,3].map(i => ({
+    idx:   i,
+    co:    document.querySelector(`.slot-co[data-idx="${i}"]`).value,
+    nome:  document.querySelector(`.slot-input[data-idx="${i}"]`).value,
+    sigla: document.querySelector(`.slot-badge[data-idx="${i}"]`).textContent.replace('✓ ',''),
+    color: SLOT_COLORS[i],
+    label: SLOT_LABELS[i],
+  })).filter(s => s.co);
+
+  if (slots.length < 2) {
+    alert('Selecione ao menos 2 instituições para comparar.');
+    return;
+  }
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('vs-result').style.display   = 'block';
+
+  // Busca dados em paralelo
+  _resultados = await Promise.all(slots.map(s =>
+    fetchIES(s.co).then(d => ({ ...s, ...d }))
+  ));
+
+  renderCards();
+  renderBarras();
+  renderTaxas();
+  renderRadar();
+  renderCursos();
+}
+
+// ── Cards de métricas ──────────────────────────────────────────────────
+function renderCards() {
+  const metricas = [
+    { key: 'total_matriculas',   label: 'MATRÍCULAS',   fmt: fmtK },
+    { key: 'total_ingressantes', label: 'INGRESSANTES',  fmt: fmtK },
+    { key: 'total_concluintes',  label: 'CONCLUINTES',   fmt: fmtK },
+    { key: 'total_vagas',        label: 'VAGAS',         fmt: fmtK },
+    { key: 'taxa_ocupacao',      label: 'OCUPAÇÃO',      fmt: n => n + '%' },
+    { key: 'taxa_conclusao',     label: 'CONCLUSÃO',     fmt: n => n + '%' },
+  ];
+
+  // Grid: 1 coluna por IES + 1 coluna de label
+  const cols = _resultados.length;
+  const container = document.getElementById('vs-cards');
+  container.style.gridTemplateColumns = `140px repeat(${cols}, 1fr)`;
+  container.style.display = 'grid';
+
+  let html = '';
+
+  // Cabeçalho IES
+  html += `<div style="background:var(--bg1);border-bottom:1px solid var(--line);
+                        border-right:1px solid var(--line);padding:10px 14px"></div>`;
+  _resultados.forEach(r => {
+    html += `
+      <div style="background:var(--bg1);border-bottom:1px solid var(--line);
+                  border-right:1px solid var(--line);padding:10px 14px;
+                  border-top:2px solid ${r.color}">
+        <div style="font-family:var(--mono);font-size:.58rem;color:${r.color};
+                    letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">${r.label}</div>
+        <div style="font-family:var(--cond);font-weight:700;font-size:.78rem;
+                    color:var(--tx0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+             title="${r.nome}">${r.sigla || r.nome}</div>
+        <div style="font-family:var(--mono);font-size:.6rem;color:var(--tx2);
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.nome}</div>
+      </div>`;
+  });
+
+  // Linhas de métricas
+  metricas.forEach(m => {
+    // Encontra max para highlight
+    const vals = _resultados.map(r => Number(r.kpis[m.key]) || 0);
+    const maxV = Math.max(...vals);
+
+    html += `
+      <div style="border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+                  padding:10px 14px;background:var(--bg1);
+                  font-family:var(--mono);font-size:.58rem;color:var(--tx2);
+                  letter-spacing:.1em;text-transform:uppercase;
+                  display:flex;align-items:center">${m.label}</div>`;
+
+    _resultados.forEach((r, i) => {
+      const val  = Number(r.kpis[m.key]) || 0;
+      const best = val === maxV && maxV > 0;
+      html += `
+        <div style="border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+                    padding:10px 14px;${best ? 'background:rgba(163,230,53,.04)' : ''}">
+          <div style="font-family:var(--mono);font-weight:600;font-size:1.1rem;
+                      color:${best ? r.color : 'var(--tx0)'};line-height:1">
+            ${m.fmt(val)}
+            ${best ? '<span style="font-size:.5rem;vertical-align:top;margin-left:3px;opacity:.7">▲</span>' : ''}
+          </div>
+        </div>`;
+    });
+  });
+
+  container.innerHTML = html;
+}
+
+// ── Barras agrupadas ───────────────────────────────────────────────────
+function renderBarras() {
+  kill('c-vs-bar');
+  const ctx = document.getElementById('c-vs-bar');
+  if (!ctx) return;
+
+  const labels  = ['Matrículas','Ingressantes','Concluintes'];
+  const c       = getThemeColors();
+
+  const datasets = _resultados.map(r => ({
+    label:           r.sigla || r.label,
+    data:            [r.kpis.total_matriculas, r.kpis.total_ingressantes, r.kpis.total_concluintes],
+    backgroundColor: r.color + 'b0',
+    borderColor:     r.color,
+    borderWidth:     1,
+    borderRadius:    2,
+  }));
+
+  _CH['c-vs-bar'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      animation: { duration: 500 },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            color: c.tick,
+            font: { family:"'IBM Plex Mono'", size: 10 },
+            boxWidth: 10, padding: 12,
+          }
+        },
+        tooltip: {
+          backgroundColor: c.ttbg, borderColor: c.ttbrd, borderWidth: 1,
+          titleColor: c.tttxt, bodyColor: c.ttmut, padding: 10, cornerRadius: 2,
+          callbacks: { label: x => ` ${x.dataset.label}: ${fmt(x.raw)}` }
+        }
+      },
+      scales: {
+        x: { ticks:{color:c.tick}, grid:{color:c.grid}, border:{color:c.grid} },
+        y: { ticks:{color:c.tick, callback: n => fmtK(n)}, grid:{color:c.grid}, border:{color:c.grid} }
+      }
+    }
+  });
+}
+
+// ── Barras de taxas ────────────────────────────────────────────────────
+function renderTaxas() {
+  kill('c-vs-taxa');
+  const ctx = document.getElementById('c-vs-taxa');
+  if (!ctx) return;
+
+  const labels   = ['Ocupação %','Permanência %','Conclusão %'];
+  const c        = getThemeColors();
+
+  const datasets = _resultados.map(r => ({
+    label:           r.sigla || r.label,
+    data:            [r.kpis.taxa_ocupacao, r.kpis.taxa_permanencia, r.kpis.taxa_conclusao],
+    backgroundColor: r.color + 'b0',
+    borderColor:     r.color,
+    borderWidth:     1,
+    borderRadius:    2,
+  }));
+
+  _CH['c-vs-taxa'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      animation: { duration: 500 },
+      plugins: {
+        legend: {
+          display: true, position: 'bottom',
+          labels: { color:c.tick, font:{family:"'IBM Plex Mono'",size:10}, boxWidth:10, padding:12 }
+        },
+        tooltip: {
+          backgroundColor:c.ttbg, borderColor:c.ttbrd, borderWidth:1,
+          titleColor:c.tttxt, bodyColor:c.ttmut, padding:10, cornerRadius:2,
+          callbacks: { label: x => ` ${x.dataset.label}: ${x.raw}%` }
+        }
+      },
+      scales: {
+        x: { ticks:{color:c.tick}, grid:{color:c.grid}, border:{color:c.grid} },
+        y: {
+          ticks:{color:c.tick, callback: n => n+'%'},
+          grid:{color:c.grid}, border:{color:c.grid},
+          max: 100,
+        }
+      }
+    }
+  });
+}
+
+// ── Radar ──────────────────────────────────────────────────────────────
+function renderRadar() {
+  kill('c-vs-radar');
+  const ctx = document.getElementById('c-vs-radar');
+  if (!ctx) return;
+
+  // Normaliza cada métrica 0-100 em relação ao máximo entre as IES
+  const keys = [
+    { key:'total_matriculas',   label:'Matrículas' },
+    { key:'total_ingressantes', label:'Ingressantes' },
+    { key:'total_concluintes',  label:'Concluintes' },
+    { key:'taxa_ocupacao',      label:'Ocupação' },
+    { key:'taxa_permanencia',   label:'Permanência' },
+    { key:'taxa_conclusao',     label:'Conclusão' },
+  ];
+
+  const maxes = keys.map(k =>
+    Math.max(..._resultados.map(r => Number(r.kpis[k.key]) || 0)) || 1
+  );
+
+  const c = getThemeColors();
+
+  const datasets = _resultados.map(r => ({
+    label:           r.sigla || r.label,
+    data:            keys.map((k, i) => ((Number(r.kpis[k.key]) || 0) / maxes[i] * 100)),
+    backgroundColor: r.color + '22',
+    borderColor:     r.color,
+    borderWidth:     1.5,
+    pointBackgroundColor: r.color,
+    pointRadius:     3,
+  }));
+
+  _CH['c-vs-radar'] = new Chart(ctx, {
+    type: 'radar',
+    data: { labels: keys.map(k => k.label), datasets },
+    options: {
+      responsive: true,
+      animation: { duration: 500 },
+      plugins: {
+        legend: {
+          display: true, position: 'bottom',
+          labels: { color:c.tick, font:{family:"'IBM Plex Mono'",size:10}, boxWidth:10, padding:12 }
+        },
+        tooltip: {
+          backgroundColor:c.ttbg, borderColor:c.ttbrd, borderWidth:1,
+          titleColor:c.tttxt, bodyColor:c.ttmut, padding:10, cornerRadius:2,
+          callbacks: { label: x => ` ${x.dataset.label}: ${x.raw.toFixed(1)}` }
+        }
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display:false },
+          grid:  { color:c.grid },
+          angleLines: { color:c.grid },
+          pointLabels: { color:c.tick, font:{family:"'IBM Plex Mono'",size:10} }
+        }
+      }
+    }
+  });
+}
+
+// ── Top 5 Cursos por IES ───────────────────────────────────────────────
+function renderCursos() {
+  const tb = document.getElementById('tb-vs-cursos');
+  if (!tb) return;
+
+  let rows = '';
+  _resultados.forEach(r => {
+    const top5 = (r.cursosTop || []).slice(0, 5);
+    if (!top5.length) return;
+    const maxMat = top5[0].matriculas || 1;
+    top5.forEach((c, i) => {
+      rows += `
+        <tr>
+          ${i === 0
+            ? `<td rowspan="${top5.length}" style="border-right:1px solid var(--line);
+                 vertical-align:top;padding:8px 14px">
+                 <div style="font-family:var(--mono);font-size:.6rem;color:${r.color};
+                             letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px">${r.label}</div>
+                 <div style="font-size:.68rem;font-weight:600;color:var(--tx0);
+                             max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                      title="${r.nome}">${r.sigla || r.nome}</div>
+               </td>`
+            : ''}
+          <td style="font-size:.7rem;max-width:200px;overflow:hidden;
+                     text-overflow:ellipsis;white-space:nowrap">${c.curso}</td>
+          <td class="num">${fmt(c.matriculas)}</td>
+          <td class="num" style="color:var(--green)">${c.market_share}%</td>
+        </tr>`;
+    });
+    // Separador
+    rows += `<tr><td colspan="4" style="padding:0;background:var(--line);height:1px"></td></tr>`;
+  });
+
+  tb.innerHTML = rows;
+}
+
+// ── Init ───────────────────────────────────────────────────────────────
+async function init() {
+  const d = await fetch('/api/filtros').then(r => r.json());
+  setupSlots(d.ies_lista || []);
+}
+
+init();
+</script>
+{% endblock %}

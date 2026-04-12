@@ -1,134 +1,506 @@
 {% extends "base.html" %}
 {% block title %}Overview — Conteúdo Insights{% endblock %}
 {% block page_title %}Overview{% endblock %}
-{% block page_crumb %}CENSO · 2024{% endblock %}
+{% block page_crumb %}CENSO · 2024 · VISÃO GERAL{% endblock %}
 
 {% block filters %}
 <div class="fbar">
-  <div class="fi"><span class="fi-lbl">REGIÃO</span><select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">UF</span><select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REGIÃO</span>
+    <select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">UF</span>
+    <select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MICRORREGIÃO</span>
+    <select class="fi-sel" id="f-micro" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">MUNICÍPIO</span>
+    <select class="fi-sel" id="f-mun" style="max-width:160px"><option value="">TODOS</option></select></div>
   <div class="fi"><span class="fi-lbl">MODALIDADE</span>
     <select class="fi-sel" id="f-mod">
-      <option value="">TODAS</option><option value="1">PRESENCIAL</option><option value="2">EAD</option>
-    </select>
+      <option value="">TODAS</option>
+      <option value="1">PRESENCIAL</option>
+      <option value="2">EAD</option>
+      <option value="3">SEMI-PRESENCIAL</option>
+    </select></div>
+  <div class="fi"><span class="fi-lbl">ÁREA</span>
+    <select class="fi-sel" id="f-area" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">REDE</span>
+    <select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
+  <div class="fi"><span class="fi-lbl">GRAU</span>
+    <select class="fi-sel" id="f-grau" style="max-width:140px"><option value="">TODOS</option></select></div>
+  <div class="fi"><span class="fi-lbl">ORG. ACAD.</span>
+    <select class="fi-sel" id="f-org" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi" style="position:relative">
+    <span class="fi-lbl">IES</span>
+    <input type="text" id="f-ies-input" class="fi-sel" placeholder="buscar IES…"
+           autocomplete="off" style="max-width:180px;cursor:text">
+    <input type="hidden" id="f-ies-co">
+    <div id="ies-dd" style="display:none;position:absolute;top:34px;left:0;z-index:999;
+         background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
+         max-height:220px;overflow-y:auto;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    </div>
   </div>
-  <div class="fi"><span class="fi-lbl">ÁREA</span><select class="fi-sel" id="f-area"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">REDE</span><select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
   <div class="f-act">
-    <button class="fb fb-go" onclick="aplicar()">FILTRAR</button>
+    <button class="fb fb-go"  onclick="aplicar()">FILTRAR</button>
     <button class="fb fb-clr" onclick="limpar()">LIMPAR</button>
   </div>
 </div>
 {% endblock %}
 
 {% block content %}
+
+<!-- ── KPI STRIP — 6 células ─────────────────────────────────────────── -->
 <div class="kpi-strip">
-  <div class="kpi-cell"><div class="kpi-tag">Matrículas</div><div class="kpi-num pending" id="k-mat">———</div><div class="kpi-sub">total ativo</div></div>
-  <div class="kpi-cell"><div class="kpi-tag">Ingressantes</div><div class="kpi-num pending" id="k-ing">———</div><div class="kpi-sub">novos alunos</div></div>
-  <div class="kpi-cell"><div class="kpi-tag">Concluintes</div><div class="kpi-num pending" id="k-conc">———</div><div class="kpi-sub">formados</div></div>
-  <div class="kpi-cell"><div class="kpi-tag">Vagas</div><div class="kpi-num pending" id="k-vagas">———</div><div class="kpi-sub" id="k-ocpsub">ocupação —</div></div>
-  <div class="kpi-cell"><div class="kpi-tag">Cursos</div><div class="kpi-num pending" id="k-cursos">———</div><div class="kpi-sub">ativos</div></div>
-  <div class="kpi-cell"><div class="kpi-tag">Instituições</div><div class="kpi-num pending" id="k-ies">———</div><div class="kpi-sub">no filtro</div></div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">MATRÍCULAS</div>
+    <div class="kpi-num pending" id="k-mat">—</div>
+    <div class="kpi-sub">total ativo</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">INGRESSANTES</div>
+    <div class="kpi-num pending" id="k-ing">—</div>
+    <div class="kpi-sub">novos alunos</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">CONCLUINTES</div>
+    <div class="kpi-num pending" id="k-conc">—</div>
+    <div class="kpi-sub">formados</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">VAGAS OFERTADAS</div>
+    <div class="kpi-num pending" id="k-vagas">—</div>
+    <div class="kpi-sub" id="k-ocpsub">ocupação —</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">CURSOS ATIVOS</div>
+    <div class="kpi-num pending" id="k-cursos">—</div>
+    <div class="kpi-sub">distintos</div>
+  </div>
+  <div class="kpi-cell">
+    <div class="kpi-tag">INSTITUIÇÕES</div>
+    <div class="kpi-num pending" id="k-ies">—</div>
+    <div class="kpi-sub">no filtro</div>
+  </div>
 </div>
 
+<!-- ── TAXA BAR ──────────────────────────────────────────────────────── -->
 <div class="ov-bar">
-  <div class="ov-item"><span class="ov-lbl">OCUPAÇÃO</span><span class="ov-val" id="s-ocp">—</span></div>
+  <div class="ov-item">
+    <span class="ov-lbl">TAXA OCUPAÇÃO</span>
+    <span class="ov-val" id="s-ocp" style="color:var(--green)">—</span>
+  </div>
   <div class="ov-sep"></div>
-  <div class="ov-item"><span class="ov-lbl">PERMANÊNCIA</span><span class="ov-val" id="s-perm">—</span></div>
+  <div class="ov-item">
+    <span class="ov-lbl">TAXA PERMANÊNCIA</span>
+    <span class="ov-val" id="s-perm" style="color:var(--cyan)">—</span>
+  </div>
   <div class="ov-sep"></div>
-  <div class="ov-item"><span class="ov-lbl">CONCLUSÃO</span><span class="ov-val" id="s-crat">—</span></div>
+  <div class="ov-item">
+    <span class="ov-lbl">TAXA CONCLUSÃO</span>
+    <span class="ov-val" id="s-crat" style="color:var(--amber)">—</span>
+  </div>
   <div class="ov-sep"></div>
-  <div class="ov-item"><span class="ov-lbl">REF</span><span class="ov-val">CENSO 2024</span></div>
+  <div class="ov-item">
+    <span class="ov-lbl">FEMININO</span>
+    <span class="ov-val" id="s-fem" style="color:var(--violet)">—</span>
+  </div>
+  <div class="ov-sep"></div>
+  <div class="ov-item">
+    <span class="ov-lbl">MASCULINO</span>
+    <span class="ov-val" id="s-masc">—</span>
+  </div>
+  <div class="ov-sep"></div>
+  <div class="ov-item">
+    <span class="ov-lbl">REF</span>
+    <span class="ov-val">CENSO 2024</span>
+  </div>
 </div>
 
+<!-- ── ROW 1: Região + Modalidade ───────────────────────────────────── -->
 <div class="grid g-6040">
   <div class="panel">
     <div class="ph"><span class="ph-title">Matrículas por Região</span><span class="ph-tag">DISTRIBUIÇÃO</span></div>
-    <div class="pb"><div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div><canvas id="c-reg" style="display:none"></canvas></div>
+    <div class="pb">
+      <div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-reg" style="display:none;max-height:220px"></canvas>
+    </div>
   </div>
-  <div class="panel" style="display:flex;flex-direction:column">
-    <div class="ph"><span class="ph-title">Modalidade</span><span class="ph-tag">PRES · EAD</span></div>
-    <div class="pb" style="flex:1">
-      <div class="cload" id="l-mod"><div class="spin"></div>CARREGANDO</div>
-      <canvas id="c-mod" style="display:none;max-height:150px"></canvas>
-      <div class="dleg" id="dl-mod"></div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Modalidade</span><span class="ph-tag">PRES · EAD · SEMI</span></div>
+    <div class="pb" style="display:flex;gap:16px;align-items:center">
+      <div style="flex:0 0 150px;height:150px">
+        <div class="cload" id="l-mod" style="height:150px"><div class="spin"></div></div>
+        <canvas id="c-mod" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="dl-mod" style="flex:1"></div>
     </div>
   </div>
 </div>
 
-<div class="grid g-6040">
+<!-- ── ROW 2: UF + Gênero ────────────────────────────────────────────── -->
+<div class="grid g-7030">
   <div class="panel">
     <div class="ph"><span class="ph-title">Matrículas por UF</span><span class="ph-tag">TOP 15</span></div>
-    <div class="pb"><div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div><canvas id="c-uf" style="display:none;max-height:280px"></canvas></div>
+    <div class="pb">
+      <div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-uf" style="display:none;max-height:280px"></canvas>
+    </div>
   </div>
-  <div class="panel" style="display:flex;flex-direction:column">
-    <div class="ph"><span class="ph-title">Gênero</span><span class="ph-tag">DISTRIBUIÇÃO</span></div>
-    <div class="pb" style="flex:1">
-      <div class="cload" id="l-gen"><div class="spin"></div>CARREGANDO</div>
-      <canvas id="c-gen" style="display:none;max-height:150px"></canvas>
-      <div class="dleg" id="dl-gen"></div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Gênero</span><span class="ph-tag">FEM · MASC</span></div>
+    <div class="pb" style="display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div style="width:150px;height:150px">
+        <div class="cload" id="l-gen" style="height:150px"><div class="spin"></div></div>
+        <canvas id="c-gen" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="dl-gen" style="width:100%"></div>
     </div>
   </div>
 </div>
+
+<!-- ── ROW 3: Taxas (métricas boxes) + Rede ─────────────────────────── -->
+<div class="grid g-5050">
+  <!-- Painel de métricas colunadas -->
+  <div class="panel" style="display:flex">
+    <div style="flex:1;border-right:1px solid var(--line)">
+      <div class="ph"><span class="ph-title">Funil de Conversão</span></div>
+      <div class="pb">
+        <div class="cload" id="l-funil"><div class="spin"></div>CARREGANDO</div>
+        <canvas id="c-funil" style="display:none;max-height:200px"></canvas>
+      </div>
+    </div>
+    <div class="mcol" style="flex:0 0 130px">
+      <div class="mbox">
+        <div class="mtag">OCUPAÇÃO</div>
+        <div class="mval g pending" id="m-ocp">—</div>
+        <div class="mdesc">ing / vagas</div>
+      </div>
+      <div class="mbox">
+        <div class="mtag">PERMANÊNCIA</div>
+        <div class="mval c pending" id="m-perm">—</div>
+        <div class="mdesc">mat / ing</div>
+      </div>
+      <div class="mbox">
+        <div class="mtag">CONCLUSÃO</div>
+        <div class="mval a pending" id="m-conc">—</div>
+        <div class="mdesc">conc / mat</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rede -->
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Distribuição por Rede</span><span class="ph-tag">PÚBLICA · PRIVADA</span></div>
+    <div class="pb" style="display:flex;gap:16px;align-items:center">
+      <div style="flex:0 0 150px;height:150px">
+        <div class="cload" id="l-rede" style="height:150px"><div class="spin"></div></div>
+        <canvas id="c-rede" style="display:none"></canvas>
+      </div>
+      <div class="dleg" id="dl-rede" style="flex:1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 4: Top 5 Cursos + Top 5 IES ──────────────────────────────── -->
+<div class="grid g-5050">
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Top 5 Cursos</span><span class="ph-tag">POR MATRÍCULAS</span></div>
+    <div class="pb np">
+      <div class="cload" id="l-tcur"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-tcur" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:24px">#</th>
+            <th>CURSO</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">SHARE</th>
+          </tr>
+        </thead>
+        <tbody id="tb-tcur"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Top 5 IES</span><span class="ph-tag">POR MATRÍCULAS</span></div>
+    <div class="pb np">
+      <div class="cload" id="l-ties"><div class="spin"></div>CARREGANDO</div>
+      <table class="dt" id="t-ties" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:24px">#</th>
+            <th>INSTITUIÇÃO</th>
+            <th>UF</th>
+            <th class="r">MATRÍCULAS</th>
+            <th class="r">SHARE</th>
+          </tr>
+        </thead>
+        <tbody id="tb-ties"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 5: Grau acadêmico ─────────────────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph"><span class="ph-title">Distribuição por Grau Acadêmico</span><span class="ph-tag">BACHARELADO · LICENCIATURA · TECNÓLOGO</span></div>
+    <div class="pb">
+      <div class="cload" id="l-grau"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-grau" style="display:none;max-height:160px"></canvas>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-const PAL = ['#a3e635','#22d3ee','#f59e0b','#a78bfa','#f87171','#34d399','#fb923c','#60a5fa'];
+// ── Helpers ────────────────────────────────────────────────────────────
 
-function gf(){ return {regiao:v('f-reg'),uf:v('f-uf'),modalidade:v('f-mod'),area:v('f-area'),rede:v('f-rede')} }
-function v(id){ const e=document.getElementById(id); return e?e.value:''; }
-function qs(p){ const q=Object.entries(p).filter(([,v])=>v).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&'); return q?'?'+q:''; }
-function aplicar(){ loadKPIs(); loadCharts(); }
-function limpar(){ ['f-reg','f-uf','f-mod','f-area','f-rede'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''}); aplicar(); }
+function gf() {
+  return {
+    regiao:        v('f-reg'),
+    uf:            v('f-uf'),
+    microrregiao:  v('f-micro'),
+    municipio:     v('f-mun'),
+    modalidade:    v('f-mod'),
+    area:          v('f-area'),
+    rede:          v('f-rede'),
+    grau:          v('f-grau'),
+    org_academica: v('f-org'),
+    co_ies:        v('f-ies-co'),
+  };
+}
 
-async function loadKPIs(){
-  const d = await fetch('/api/kpis'+qs(gf())).then(r=>r.json());
-  const set=(id,val)=>{const e=document.getElementById(id);if(!e)return;e.classList.remove('pending');e.textContent=val};
-  set('k-mat',   fmtK(d.total_matriculas));
-  set('k-ing',   fmtK(d.total_ingressantes));
-  set('k-conc',  fmtK(d.total_concluintes));
-  set('k-vagas', fmtK(d.total_vagas));
-  set('k-cursos',fmt(d.total_cursos));
-  set('k-ies',   fmt(d.total_ies));
-  document.getElementById('k-ocpsub').textContent = 'ocupação '+d.taxa_ocupacao+'%';
-  const s=id=>document.getElementById(id);
-  if(s('s-ocp')) s('s-ocp').textContent  = d.taxa_ocupacao+'%';
-  if(s('s-perm'))s('s-perm').textContent = d.taxa_permanencia+'%';
-  if(s('s-crat'))s('s-crat').textContent = d.taxa_conclusao+'%';
-  document.querySelectorAll('.kpi-cell').forEach((c,i)=>setTimeout(()=>c.classList.add('lit'),i*70));
+function qs(p) {
+  const q = Object.entries(p).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  return q ? '?' + q : '';
+}
+
+function aplicar() { loadAll(); }
+
+function limpar() {
+  ['f-reg','f-uf','f-micro','f-mun','f-mod','f-area','f-rede','f-grau','f-org'].forEach(id => setV(id,''));
+  setV('f-ies-co','');
+  const inp = document.getElementById('f-ies-input');
+  if (inp) inp.value = '';
+  loadAll();
+}
+
+// ── IES Typeahead ──────────────────────────────────────────────────────
+function setupIesTypeahead(lista) {
+  const input = document.getElementById('f-ies-input');
+  const dd    = document.getElementById('ies-dd');
+  const coInp = document.getElementById('f-ies-co');
+  if (!input || !dd) return;
+  let _open = false;
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (q.length < 2) { dd.style.display = 'none'; return; }
+    const hits = lista.filter(x =>
+      x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q)
+    ).slice(0, 40);
+    if (!hits.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = hits.map(x => `
+      <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}"
+           style="padding:7px 12px;cursor:pointer;font-family:var(--mono);font-size:.68rem;
+                  color:var(--tx1);border-bottom:1px solid var(--line);
+                  display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.nome}</span>
+        <span style="color:var(--tx3);font-size:.6rem;flex-shrink:0">${x.sigla||''}</span>
+      </div>`).join('');
+    dd.querySelectorAll('.ies-opt').forEach(el => {
+      el.addEventListener('mouseenter', () => el.style.background = 'var(--bg3)');
+      el.addEventListener('mouseleave', () => el.style.background = '');
+      el.addEventListener('click', () => {
+        input.value = el.dataset.nome;
+        coInp.value = el.dataset.co;
+        dd.style.display = 'none';
+        _open = false;
+      });
+    });
+    dd.style.display = 'block';
+    _open = true;
+  });
+  document.addEventListener('click', e => {
+    if (_open && !dd.contains(e.target) && e.target !== input) {
+      dd.style.display = 'none'; _open = false;
+    }
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; }
+  });
+}
+
+// ── Init filtros ───────────────────────────────────────────────────────
+async function initFilters() {
+  const d = await fetch('/api/filtros').then(r => r.json());
+  const fill = (id, items) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    items.forEach(v => el.add(new Option(v, v)));
+  };
+  fill('f-reg',   d.regioes        || []);
+  fill('f-uf',    d.ufs            || []);
+  fill('f-micro', d.microrregioes  || []);
+  fill('f-mun',   d.municipios     || []);
+  fill('f-area',  d.areas          || []);
+  fill('f-rede',  d.redes          || []);
+  fill('f-grau',  d.graus          || []);
+  fill('f-org',   d.org_academica  || []);
+  setupIesTypeahead(d.ies_lista || []);
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────
+async function loadKPIs(q) {
+  const d = await fetch('/api/kpis' + q).then(r => r.json());
+  const set = (id, val) => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.remove('pending'); e.textContent = val; }
+  };
+
+  set('k-mat',    fmtK(d.total_matriculas));
+  set('k-ing',    fmtK(d.total_ingressantes));
+  set('k-conc',   fmtK(d.total_concluintes));
+  set('k-vagas',  fmtK(d.total_vagas));
+  set('k-cursos', fmtK(d.total_cursos));
+  set('k-ies',    fmt(d.total_ies));
+
+  document.getElementById('k-ocpsub').textContent = 'ocupação ' + d.taxa_ocupacao + '%';
+
+  // Taxa bar
+  set('s-ocp',  d.taxa_ocupacao   + '%');
+  set('s-perm', d.taxa_permanencia + '%');
+  set('s-crat', d.taxa_conclusao   + '%');
+
+  // Metric boxes
+  set('m-ocp',  d.taxa_ocupacao    + '%');
+  set('m-perm', d.taxa_permanencia + '%');
+  set('m-conc', d.taxa_conclusao   + '%');
+  ['m-ocp','m-perm','m-conc'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.classList.remove('pending');
+  });
+
+  // Gênero na taxa bar — carregado separado
+  const g = await fetch('/api/overview/genero' + q).then(r => r.json());
+  const fem  = g.find(x => x.genero === 'Feminino')?.valor  || 0;
+  const masc = g.find(x => x.genero === 'Masculino')?.valor || 0;
+  const tot  = fem + masc || 1;
+  set('s-fem',  pct(fem,  tot));
+  set('s-masc', pct(masc, tot));
+
+  // Ticker topbar
   setTicker('tk-mat',  fmtK(d.total_matriculas));
   setTicker('tk-ing',  fmtK(d.total_ingressantes));
   setTicker('tk-conc', fmtK(d.total_concluintes));
-  setTicker('tk-ocp',  d.taxa_ocupacao+'%');
-  setTicker('tk-perm', d.taxa_permanencia+'%');
+  setTicker('tk-ocp',  d.taxa_ocupacao   + '%');
+  setTicker('tk-perm', d.taxa_permanencia + '%');
+
+  document.querySelectorAll('.kpi-cell').forEach((c, i) =>
+    setTimeout(() => c.classList.add('lit'), i * 70)
+  );
 }
 
-async function loadCharts(){
-  const q = qs(gf());
-  const [reg,mod,gen,uf] = await Promise.all([
-    fetch('/api/overview/regiao'+q).then(r=>r.json()),
-    fetch('/api/overview/modalidade'+q).then(r=>r.json()),
-    fetch('/api/overview/genero'+q).then(r=>r.json()),
-    fetch('/api/overview/uf'+q).then(r=>r.json()),
+// ── Charts ─────────────────────────────────────────────────────────────
+async function loadCharts(q) {
+  const [reg, mod, gen, uf, funil, rede, grau, cursosTop, iesTop] = await Promise.all([
+    fetch('/api/overview/regiao'    + q).then(r => r.json()),
+    fetch('/api/overview/modalidade'+ q).then(r => r.json()),
+    fetch('/api/overview/genero'    + q).then(r => r.json()),
+    fetch('/api/overview/uf'        + q).then(r => r.json()),
+    fetch('/api/funil/data'         + q).then(r => r.json()),
+    fetch('/api/matriculas/rede'    + q).then(r => r.json()),
+    fetch('/api/matriculas/grau'    + q).then(r => r.json()),
+    fetch('/api/matriculas/cursos_top' + q).then(r => r.json()),
+    fetch('/api/matriculas/ies_top'    + q).then(r => r.json()),
   ]);
-  showC('l-reg','c-reg'); mkBar('c-reg', reg.map(r=>r.regiao), reg.map(r=>r.matriculas));
-  showC('l-mod','c-mod'); mkDonut('c-mod', mod.map(r=>r.modalidade), mod.map(r=>r.matriculas), 'dl-mod');
-  showC('l-uf', 'c-uf');  mkBar('c-uf', uf.slice(0,15).map(r=>r.uf), uf.slice(0,15).map(r=>r.matriculas), true, PAL[0]+'b0');
-  showC('l-gen','c-gen'); mkDonut('c-gen', gen.map(r=>r.genero), gen.map(r=>r.valor), 'dl-gen', [PAL[3],PAL[2]]);
+
+  // Região
+  showC('l-reg', 'c-reg');
+  mkBar('c-reg', reg.map(r => r.regiao), reg.map(r => r.matriculas));
+
+  // Modalidade
+  showC('l-mod', 'c-mod');
+  mkDonut('c-mod', mod.map(r => r.modalidade), mod.map(r => r.matriculas), 'dl-mod',
+    ['#a3e635','#22d3ee','#f59e0b']);
+
+  // UF
+  showC('l-uf', 'c-uf');
+  mkBar('c-uf', uf.slice(0,15).map(r => r.uf), uf.slice(0,15).map(r => r.matriculas),
+    true, '#a3e635b0');
+
+  // Gênero
+  showC('l-gen', 'c-gen');
+  mkDonut('c-gen', gen.map(r => r.genero), gen.map(r => r.valor), 'dl-gen',
+    ['#a78bfa','#22d3ee']);
+
+  // Funil — barra horizontal mostrando as 4 etapas
+  showC('l-funil', 'c-funil');
+  mkBar('c-funil',
+    funil.map(r => r.etapa),
+    funil.map(r => r.valor),
+    true,
+    null
+  );
+
+  // Rede
+  showC('l-rede', 'c-rede');
+  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'dl-rede',
+    ['#22d3ee','#a78bfa','#f59e0b','#f87171']);
+
+  // Grau acadêmico
+  showC('l-grau', 'c-grau');
+  mkBar('c-grau', grau.map(r => r.grau), grau.map(r => r.matriculas), false);
+
+  // Top 5 Cursos
+  const tbCur = document.getElementById('tb-tcur');
+  if (tbCur) {
+    const top5c = cursosTop.slice(0, 5);
+    const maxC  = top5c[0]?.matriculas || 1;
+    tbCur.innerHTML = top5c.map((r, i) => `
+      <tr>
+        <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+        <td style="font-size:.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.curso}</td>
+        <td class="num">${Number(r.matriculas).toLocaleString('pt-BR')}</td>
+        <td class="num" style="color:var(--green)">${r.market_share}%</td>
+      </tr>`).join('');
+  }
+  showT('l-tcur', 't-tcur');
+
+  // Top 5 IES
+  const tbIes = document.getElementById('tb-ties');
+  if (tbIes) {
+    const top5i = iesTop.slice(0, 5);
+    tbIes.innerHTML = top5i.map((r, i) => `
+      <tr>
+        <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
+        <td style="font-size:.72rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ies||'—'}</td>
+        <td style="font-family:var(--mono);font-size:.66rem">${r.uf||'—'}</td>
+        <td class="num">${Number(r.matriculas).toLocaleString('pt-BR')}</td>
+        <td class="num" style="color:var(--green)">${r.market_share}%</td>
+      </tr>`).join('');
+  }
+  showT('l-ties', 't-ties');
 }
 
-async function initFilters(){
-  const d = await fetch('/api/filtros').then(r=>r.json());
-  const fill=(id,items)=>{const el=document.getElementById(id);if(!el)return;items.forEach(v=>el.add(new Option(v,v)))};
-  fill('f-reg',  d.regioes||[]);
-  fill('f-uf',   d.ufs||[]);
-  fill('f-area', d.areas||[]);
-  if(d.redes) fill('f-rede', d.redes);
+// ── Load all ───────────────────────────────────────────────────────────
+async function loadAll() {
+  // Reseta KPIs
+  ['k-mat','k-ing','k-conc','k-vagas','k-cursos','k-ies',
+   's-ocp','s-perm','s-crat','s-fem','s-masc',
+   'm-ocp','m-perm','m-conc'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.classList.add('pending'); e.textContent = '—'; }
+  });
+
+  const q = qs(gf());
+  await Promise.all([loadKPIs(q), loadCharts(q)]);
 }
 
-(async()=>{ initFilters(); await loadKPIs(); loadCharts(); })();
+// ── Boot ───────────────────────────────────────────────────────────────
+(async () => {
+  await initFilters();
+  loadAll();
+})();
 </script>
 {% endblock %}
