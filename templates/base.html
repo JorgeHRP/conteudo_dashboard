@@ -6,6 +6,7 @@
   <title>{% block title %}Radar Conteúdo{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Radar Conteúdo_Favicon Principal.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   {% block head %}{% endblock %}
 </head>
@@ -15,35 +16,11 @@
 <aside class="sb" id="sb">
 
   <div class="sb-logo">
-    <div class="sb-mark">
-      <!-- Tenta carregar favicon da marca, cai no SVG se não existir -->
-      <img class="logo-img-dk"
-           src="{{ url_for('static', filename='img/favicon-white.png') }}"
-           alt=""
-           onerror="this.style.display='none'">
-      <img class="logo-img-lt"
-           src="{{ url_for('static', filename='img/favicon-dark.png') }}"
-           alt=""
-           onerror="this.style.display='none'">
-      <!-- Fallback SVG sempre presente -->
-      <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <rect x="1"   y="6"   width="3" height="7"  rx=".6" fill="white" opacity=".95"/>
-        <rect x="5.5" y="3.5" width="3" height="9.5" rx=".6" fill="white" opacity=".75"/>
-        <rect x="10"  y="1"   width="3" height="12" rx=".6" fill="white" opacity=".55"/>
-      </svg>
-    </div>
     <div class="sb-text">
-      <!-- Tenta logo completa, cai no texto se não existir -->
-      <img class="logo-img-dk"
-           src="{{ url_for('static', filename='img/logo-white.png') }}"
+      <img src="{{ url_for('static', filename='img/logo-white.png') }}"
            alt="Radar Conteúdo"
-           style="max-height:20px;width:auto"
+           style="max-height:40px;width:auto"
            onerror="this.style.display='none';document.getElementById('sb-name-fb').style.display='block'">
-      <img class="logo-img-lt"
-           src="{{ url_for('static', filename='img/logo-dark.png') }}"
-           alt="Radar Conteúdo"
-           style="max-height:20px;width:auto"
-           onerror="this.style.display='none'">
       <div id="sb-name-fb" style="display:none">
         <div class="sb-name">Radar <em>Conteúdo</em></div>
         <div class="sb-tag">Educação Superior · 2024</div>

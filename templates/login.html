@@ -1,113 +1,146 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Conteúdo Insights — Acesso</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <style>
-    body { display:grid; grid-template-columns:1fr 400px; min-height:100vh; }
-    .left { position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:40px 48px; background:var(--bg1); border-right:1px solid var(--line); }
-    .left::before { content:''; position:absolute; inset:-10%; background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:40px 40px; transform:rotate(-5deg) scale(1.2); pointer-events:none; }
-    .bars { position:absolute; bottom:0; left:0; right:0; display:flex; align-items:flex-end; gap:2px; padding:0 40px; height:200px; pointer-events:none; }
-    .bar  { flex:1; background:linear-gradient(to top,var(--green),rgba(163,230,53,0)); border-radius:1px 1px 0 0; opacity:.12; animation:bgrow 1.2s cubic-bezier(.16,1,.3,1) both; }
-    @keyframes bgrow { from{transform:scaleY(0);transform-origin:bottom} to{transform:scaleY(1)} }
-    .scanline { position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--green),transparent); opacity:.3; animation:scan 5s ease-in-out infinite; }
-    @keyframes scan { 0%{top:0;opacity:.3} 100%{top:100%;opacity:0} }
-    .lc { position:relative; z-index:2; }
-    .eyebrow { font-family:var(--mono); font-size:.6rem; letter-spacing:.15em; text-transform:uppercase; color:var(--green); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
-    .eyebrow::before { content:''; display:block; width:20px; height:1px; background:var(--green); }
-    .lh1 { font-family:var(--cond); font-weight:700; font-size:2.2rem; letter-spacing:-.01em; line-height:1.1; margin-bottom:14px; text-transform:uppercase; }
-    .lh1 em { color:var(--green); font-style:normal; }
-    .lbody { font-size:.82rem; color:var(--tx1); line-height:1.75; max-width:340px; }
-    .lstats { display:flex; margin-top:32px; border-top:1px solid var(--line); padding-top:24px; }
-    .lstat { flex:1; padding-right:20px; }
-    .lstat+.lstat { border-left:1px solid var(--line); padding-left:20px; padding-right:0; }
-    .lstat-n { font-family:var(--mono); font-weight:600; font-size:1.3rem; color:var(--tx0); letter-spacing:-.03em; }
-    .lstat-l { font-family:var(--mono); font-size:.58rem; color:var(--tx2); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
-    .right { background:var(--bg1); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; position:relative; }
-    .th-btn { position:absolute; top:14px; right:14px; width:28px; height:28px; border-radius:2px; background:transparent; border:1px solid var(--line2); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--tx2); transition:all 100ms; }
-    .th-btn:hover { border-color:var(--line3); color:var(--tx0); }
-    .ffoot { margin-top:20px; font-family:var(--mono); font-size:.6rem; color:var(--tx3); text-align:center; line-height:1.7; }
-    .ffoot a { color:var(--tx2); transition:color 100ms; }
-    .ffoot a:hover { color:var(--tx0); }
-    @media(max-width:860px){ body{grid-template-columns:1fr} .left{display:none} }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Conteúdo - Data Analytics Login</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Radar Conteúdo_Favicon Principal.png') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080b0f;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Grade diagonal muito sutil */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glow radial no centro — verde bem apagado */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 50%, rgba(99,102,241,0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 30% at 20% 80%, rgba(16,185,129,0.04) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            z-index: 1;
+        }
+        .input-dark {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .input-dark::placeholder { color: rgba(255,255,255,0.2); }
+        .input-dark:focus {
+            border-color: #6366f1;
+            background: rgba(99,102,241,0.06);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+            outline: none;
+        }
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 24px rgba(99, 102, 241, 0.35);
+            transform: translateY(-1px);
+        }
+        .stat-badge {
+            background: rgba(99, 102, 241, 0.08);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.18);
+        }
+    </style>
 </head>
-<body>
+<body class="h-screen flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full grid lg:grid-cols-2 glass-panel rounded-3xl overflow-hidden shadow-2xl">
+        
+        <!-- Lado Info -->
+        <div class="p-10 lg:p-16 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/10">
+            <div>
+                <img src="{{ url_for('static', filename='img/logo-white.png') }}" alt="Radar Conteúdo" class="h-16 mb-12">
+                <h1 class="text-4xl font-bold text-white mb-6 leading-tight">
+                    Transformando <span class="text-indigo-400">Educação</span> em <span class="text-emerald-400">Métricas</span>.
+                </h1>
+                <p class="text-gray-400 text-lg mb-8">
+                    A plataforma inteligente para gestão do ciclo de vida do estudante universitário.
+                </p>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="stat-badge px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Ingressantes</div>
+                        <span class="text-gray-500 text-sm">Monitoramento em tempo real</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="stat-badge px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Concluintes</div>
+                        <span class="text-gray-500 text-sm">Análise de evasão e sucesso</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-gray-600 text-xs">
+                &copy; 2025 Radar Conteúdo. Todos os direitos reservados.
+            </div>
+        </div>
 
-<div class="left">
-  <div class="bars" id="bars"></div>
-  <div class="scanline"></div>
-  <div class="lc">
-    <div class="eyebrow">Inteligência de Dados Educacionais</div>
-    <h1 class="lh1">Decisões<br>baseadas em<br><em>dados reais</em></h1>
-    <p class="lbody">Acesso aos microdados do Censo da Educação Superior, cruzados com IBGE e CAGED. Inteligência para gestores estratégicos.</p>
-    <div class="lstats">
-      <div class="lstat"><div class="lstat-n">+2.700</div><div class="lstat-l">Instituições</div></div>
-      <div class="lstat"><div class="lstat-n">8,4M</div><div class="lstat-l">Matrículas</div></div>
-      <div class="lstat"><div class="lstat-n">2024</div><div class="lstat-l">Censo ES</div></div>
+        <!-- Lado Login -->
+        <div class="p-10 lg:p-16 bg-white/5 flex flex-col justify-center">
+            <h2 class="text-2xl font-semibold text-white mb-8">Acessar Painel</h2>
+            
+            <form method="POST" class="space-y-6">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">ID de Analista</label>
+                    <input type="text" name="username" placeholder="usuário@radar.com"
+                        class="w-full px-4 py-3 rounded-xl input-dark outline-none transition-all"
+                        autofocus autocomplete="username">
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400">Senha de Acesso</label>
+                    <input type="password" name="password" placeholder="••••••••"
+                        class="w-full px-4 py-3 rounded-xl input-dark outline-none transition-all"
+                        autocomplete="current-password">
+                </div>
+
+                {% if error %}
+                <div class="text-red-400 text-sm text-center py-1">{{ error }}</div>
+                {% endif %}
+
+                <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl btn-glow transition-all">
+                    Autenticar no Radar
+                </button>
+            </form>
+
+            <div class="mt-8 text-center">
+                <p class="text-gray-500 text-sm">
+                    Acesso restrito a usuários autorizados.
+                </p>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
-<div class="right">
-  <button class="th-btn" id="thBtn">
-    <svg id="thD" width="12" height="12" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.8 2.8l1.1 1.1M10.1 10.1l1.1 1.1M2.8 11.2l1.1-1.1M10.1 3.9l1.1-1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-    <svg id="thL" width="12" height="12" viewBox="0 0 14 14" fill="none" style="display:none"><path d="M12 8A5 5 0 116 2a3.5 3.5 0 006 6z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-  </button>
-
-  <div style="width:100%;max-width:320px">
-    <div style="margin-bottom:32px">
-      <div class="form-logo-row" style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
-        <svg viewBox="0 0 24 24" fill="none" width="26" height="26">
-          <rect x="2"  y="15" width="4" height="8"  rx=".5" fill="#a3e635"/>
-          <rect x="9"  y="9"  width="4" height="14" rx=".5" fill="#a3e635" opacity=".7"/>
-          <rect x="16" y="3"  width="4" height="20" rx=".5" fill="#a3e635" opacity=".4"/>
-        </svg>
-        <div class="form-logo-name">Conteúdo <em>Insights</em></div>
-      </div>
-      <div class="form-logo-sub">Plataforma de Inteligência Educacional</div>
-    </div>
-
-    {% if error %}
-    <div class="alert-err">{{ error }}</div>
-    {% endif %}
-
-    <form method="POST">
-      <div class="fg">
-        <label for="username">Usuário</label>
-        <input id="username" type="text" name="username" placeholder="seu.usuario" autofocus autocomplete="username" spellcheck="false">
-      </div>
-      <div class="fg">
-        <label for="password">Senha</label>
-        <input id="password" type="password" name="password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <button type="submit" class="btn-primary" style="margin-top:6px">
-        Acessar plataforma
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </form>
-
-    <div class="ffoot">
-      Acesso restrito a usuários autorizados.<br>
-      Problemas? <a href="mailto:suporte@conteudoedu.com.br">suporte@conteudoedu.com.br</a>
-    </div>
-  </div>
-</div>
-
-<script>
-const bars = document.getElementById('bars');
-[30,48,62,40,75,55,82,44,68,92,52,72,36,88,61,77,46,84,57,42,70,94,60,78,45,67,87,51,39,73].forEach((h,i)=>{
-  const b = document.createElement('div'); b.className='bar';
-  b.style.cssText = `height:${h}%;animation-delay:${i*28}ms`; bars.appendChild(b);
-});
-let T = localStorage.getItem('ci-theme')||'dark';
-function applyT(t){ T=t; document.documentElement.dataset.theme=t; localStorage.setItem('ci-theme',t); document.getElementById('thD').style.display=t==='dark'?'block':'none'; document.getElementById('thL').style.display=t==='dark'?'none':'block'; }
-applyT(T);
-document.getElementById('thBtn').addEventListener('click',()=>applyT(T==='dark'?'light':'dark'));
-</script>
 </body>
 </html>

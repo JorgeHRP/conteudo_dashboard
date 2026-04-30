@@ -471,29 +471,36 @@ def create_app():
     @auth.login_required
     def api_censo_evolucao_modalidade():
         """
-        Retorna evolução anual de matrículas separada por modalidade.
-        Responde com 3 séries: Presencial, EAD, Semi-presencial.
-        Respeita os mesmos filtros das outras abas.
+        Retorna evolução anual separada por modalidade (Presencial e EAD).
+        Parâmetro extra: metrica = 'matriculas' | 'ingressantes' | 'concluintes'
         """
-        params = get_filters()
-        df     = aplicar_filtros(get_evolucao(), params)
+        params  = get_filters()
+        metrica = request.args.get("metrica", "matriculas")
+        df      = aplicar_filtros(get_evolucao(), params)
 
         if df.empty:
             return jsonify([])
 
-        MAP = {"1": "Presencial", "2": "EAD", "3": "Semi-presencial"}
-        df = df.copy()
-        df["MODALIDADE_LABEL"] = df["TP_MODALIDADE_ENSINO"].map(MAP).fillna("Outro")
+        col_map = {
+            "matriculas":   "QT_MAT",
+            "ingressantes": "QT_ING",
+            "concluintes":  "QT_CONC",
+        }
+        col = col_map.get(metrica, "QT_MAT")
+
+        MAP = {"1": "Presencial", "2": "EAD"}
+        df  = df[df["TP_MODALIDADE_ENSINO"].isin(["1", "2"])].copy()
+        df["MODALIDADE_LABEL"] = df["TP_MODALIDADE_ENSINO"].map(MAP)
 
         agg = (
-            df.groupby(["NU_ANO_CENSO", "MODALIDADE_LABEL"])["QT_MAT"]
+            df.groupby(["NU_ANO_CENSO", "MODALIDADE_LABEL"])[col]
             .sum()
             .reset_index()
             .sort_values("NU_ANO_CENSO")
         )
 
         anos       = sorted(agg["NU_ANO_CENSO"].unique().tolist())
-        modalidades = ["Presencial", "EAD", "Semi-presencial"]
+        modalidades = ["Presencial", "EAD"]
 
         series = []
         for mod in modalidades:
@@ -501,7 +508,7 @@ def create_app():
             series.append({
                 "modalidade": mod,
                 "dados": [
-                    {"ano": a, "valor": int(subset.loc[a, "QT_MAT"]) if a in subset.index else 0}
+                    {"ano": a, "valor": int(subset.loc[a, col]) if a in subset.index else 0}
                     for a in anos
                 ]
             })
