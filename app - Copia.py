@@ -1,22 +1,8 @@
-from datetime import timedelta, datetime
+from datetime import timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, abort
 import auth
 import config
 from data.loader import start_loader, aplicar_filtros, get_cursos, get_ies, get_evolucao, uniq as _uniq
-
-# ── Cache simples em memória ───────────────────────────────────────────
-_cache: dict = {}
-_CACHE_TTL = 300  # segundos (5 min)
-
-def cache_get(key):
-    entry = _cache.get(key)
-    if entry and (datetime.utcnow() - entry["ts"]).seconds < _CACHE_TTL:
-        return entry["val"]
-    return None
-
-def cache_set(key, val):
-    _cache[key] = {"val": val, "ts": datetime.utcnow()}
-    return val
 
 def create_app():
     app = Flask(__name__)
@@ -104,21 +90,21 @@ def create_app():
     @app.route("/api/filtros")
     @auth.login_required
     def api_filtros():
-        cached = cache_get("filtros")
-        if cached:
-            return jsonify(cached)
-
         cursos = get_cursos()
         ies    = get_ies()
-        data   = {
+        return jsonify({
+            # Geográficos
             "regioes":       _uniq(cursos, "NO_REGIAO"),
             "ufs":           _uniq(cursos, "SG_UF"),
             "microrregioes": _uniq(cursos, "NO_MICRORREGIAO"),
             "municipios":    _uniq(cursos, "NO_MUNICIPIO"),
+            # Curso
             "areas":         _uniq(cursos, "NO_CINE_AREA_GERAL"),
             "graus":         _uniq(cursos, "TP_GRAU_ACADEMICO"),
+            # IES
             "redes":         _uniq(cursos, "TP_REDE_LABEL"),
             "org_academica": _uniq(ies,    "TP_ORGANIZACAO_ACADEMICA"),
+            # IES lookup — lista de objetos {co, nome, sigla}
             "ies_lista": (
                 ies[["CO_IES", "NO_IES", "SG_IES"]]
                 .dropna(subset=["NO_IES"])
@@ -126,8 +112,7 @@ def create_app():
                 .rename(columns={"CO_IES": "co", "NO_IES": "nome", "SG_IES": "sigla"})
                 .to_dict(orient="records")
             ),
-        }
-        return jsonify(cache_set("filtros", data))
+        })
 
     @app.route("/api/overview/regiao")
     @auth.login_required
@@ -485,16 +470,14 @@ def create_app():
     @app.route("/api/censo/evolucao/modalidade")
     @auth.login_required
     def api_censo_evolucao_modalidade():
+        """
+        Retorna evolução anual separada por modalidade (Presencial e EAD).
+        Parâmetro extra: metrica = 'matriculas' | 'ingressantes' | 'concluintes'
+        """
         params  = get_filters()
         metrica = request.args.get("metrica", "matriculas")
+        df      = aplicar_filtros(get_evolucao(), params)
 
-        # Chave de cache inclui todos os filtros ativos
-        cache_key = "evo_mod:" + metrica + ":" + str(sorted((k,v) for k,v in params.items() if v))
-        cached = cache_get(cache_key)
-        if cached:
-            return jsonify(cached)
-
-        df = aplicar_filtros(get_evolucao(), params)
         if df.empty:
             return jsonify([])
 
@@ -516,7 +499,7 @@ def create_app():
             .sort_values("NU_ANO_CENSO")
         )
 
-        anos        = sorted(agg["NU_ANO_CENSO"].unique().tolist())
+        anos       = sorted(agg["NU_ANO_CENSO"].unique().tolist())
         modalidades = ["Presencial", "EAD"]
 
         series = []
@@ -530,7 +513,7 @@ def create_app():
                 ]
             })
 
-        return jsonify(cache_set(cache_key, series))
+        return jsonify(series)
 
     # ─── FUNIL ───────────────────────────────────────────────
 
