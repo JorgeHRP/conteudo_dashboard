@@ -88,7 +88,7 @@
     </div>
   </div>
   <div class="panel">
-    <div class="ph"><span class="ph-title">Evolução de Matrículas por Modalidade</span><span class="ph-tag">PRESENCIAL · EAD · SEMI · 2020–2024</span></div>
+    <div class="ph"><span class="ph-title">Evolução de Matrículas</span><span class="ph-tag">2020 · 2021 · 2022 · 2023 · 2024</span></div>
     <div class="pb">
       <div class="cload" id="l-evo"><div class="spin"></div>CARREGANDO</div>
       <canvas id="c-evo" style="display:none;max-height:280px"></canvas>
@@ -341,14 +341,14 @@ async function loadAll() {
 
   const q = qs(gf());
 
-  const [area, evoMod, mod, grau, rede, cursos, ies] = await Promise.all([
-    fetch('/api/matriculas/area'              + q).then(r => r.json()),
-    fetch('/api/censo/evolucao/modalidade'    + q).then(r => r.json()),
-    fetch('/api/matriculas/modalidade'        + q).then(r => r.json()),
-    fetch('/api/matriculas/grau'              + q).then(r => r.json()),
-    fetch('/api/matriculas/rede'              + q).then(r => r.json()),
-    fetch('/api/matriculas/cursos_top'        + q).then(r => r.json()),
-    fetch('/api/matriculas/ies_top'           + q).then(r => r.json()),
+  const [area, evo, mod, grau, rede, cursos, ies] = await Promise.all([
+    fetch('/api/matriculas/area'       + q).then(r => r.json()),
+    fetch('/api/censo/evolucao'        + q + (q ? '&' : '?') + 'metrica=matriculas').then(r => r.json()),
+    fetch('/api/matriculas/modalidade' + q).then(r => r.json()),
+    fetch('/api/matriculas/grau'       + q).then(r => r.json()),
+    fetch('/api/matriculas/rede'       + q).then(r => r.json()),
+    fetch('/api/matriculas/cursos_top' + q).then(r => r.json()),
+    fetch('/api/matriculas/ies_top'    + q).then(r => r.json()),
   ]);
 
   loadKPIs(q);
@@ -359,19 +359,12 @@ async function loadAll() {
     area.map(r => r.area.length > 40 ? r.area.slice(0, 40) + '…' : r.area),
     area.map(r => r.matriculas), true);
 
-  // ── Evolução por modalidade (3 linhas) ───────────────────────
+  // ── Evolução censal (linha) ────────────────────────────────────
   showC('l-evo', 'c-evo');
-  const modCores = { 'Presencial': '#a060e0', 'EAD': '#00e0e0', 'Semi-presencial': '#f0a030' };
-  if (evoMod.length) {
-    const anos = evoMod[0].dados.map(d => d.ano);
-    mkLine('c-evo', anos,
-      evoMod.map(s => ({
-        label: s.modalidade,
-        data:  s.dados.map(d => d.valor),
-        color: modCores[s.modalidade] || '#888',
-      }))
-    );
-  }
+  mkLine('c-evo',
+    evo.map(r => r.ano),
+    [{ label: 'Matrículas', data: evo.map(r => r.valor), color: '#00e0e0' }]
+  );
 
   // ── Modalidade donut ──────────────────────────────────────────
   showC('l-mod', 'c-mod');

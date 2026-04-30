@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Ingressantes — Conteúdo Insights{% endblock %}
 {% block page_title %}Ingressantes{% endblock %}
-{% block page_crumb %}CENSO · 2024 · INGRESSANTES{% endblock %}
+{% block page_crumb %}CENSO · 2020–2024 · INGRESSANTES{% endblock %}
 
 {% block filters %}
 <div class="fbar">
@@ -78,7 +78,7 @@
   </div>
 </div>
 
-<!-- ── ROW 1: Área + Região ──────────────────────────────────────────── -->
+<!-- ── ROW 1: Área + Evolução Censal ────────────────────────────────── -->
 <div class="grid g-6040">
   <div class="panel">
     <div class="ph"><span class="ph-title">Ingressantes por Área de Conhecimento</span><span class="ph-tag">TOP 10</span></div>
@@ -88,21 +88,21 @@
     </div>
   </div>
   <div class="panel">
-    <div class="ph"><span class="ph-title">Por Região</span><span class="ph-tag">VOLUME</span></div>
+    <div class="ph"><span class="ph-title">Evolução de Ingressantes</span><span class="ph-tag">2020 · 2021 · 2022 · 2023 · 2024</span></div>
     <div class="pb">
-      <div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div>
-      <canvas id="c-reg" style="display:none;max-height:280px"></canvas>
+      <div class="cload" id="l-evo"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-evo" style="display:none;max-height:280px"></canvas>
     </div>
   </div>
 </div>
 
-<!-- ── ROW 2: UF ─────────────────────────────────────────────────────── -->
+<!-- ── ROW 2: Região ──────────────────────────────────────────────────── -->
 <div class="grid" style="grid-template-columns:1fr">
   <div class="panel" style="border-right:none">
-    <div class="ph"><span class="ph-title">Ingressantes por Estado</span><span class="ph-tag">RANKING UF</span></div>
+    <div class="ph"><span class="ph-title">Por Região</span><span class="ph-tag">VOLUME</span></div>
     <div class="pb">
-      <div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div>
-      <canvas id="c-uf" style="display:none;max-height:200px"></canvas>
+      <div class="cload" id="l-reg"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-reg" style="display:none;max-height:200px"></canvas>
     </div>
   </div>
 </div>
@@ -190,8 +190,6 @@
 
 {% block scripts %}
 <script>
-// ── Helpers ────────────────────────────────────────────────────────────
-
 function gf() {
   return {
     regiao:        v('f-reg'),
@@ -222,14 +220,12 @@ function limpar() {
   loadAll();
 }
 
-// ── IES Typeahead ──────────────────────────────────────────────────────
 function setupIesTypeahead(lista) {
   const input = document.getElementById('f-ies-input');
   const dd    = document.getElementById('ies-dd');
   const coInp = document.getElementById('f-ies-co');
   if (!input || !dd) return;
   let _open = false;
-
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (q.length < 2) { dd.style.display = 'none'; return; }
@@ -259,7 +255,6 @@ function setupIesTypeahead(lista) {
   input.addEventListener('keydown', e => { if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; } });
 }
 
-// ── Init filtros ───────────────────────────────────────────────────────
 async function initFilters() {
   const d = await fetch('/api/filtros').then(r => r.json());
   const fill = (id, items) => { const el = document.getElementById(id); if (!el) return; items.forEach(v => el.add(new Option(v,v))); };
@@ -274,7 +269,6 @@ async function initFilters() {
   setupIesTypeahead(d.ies_lista || []);
 }
 
-// ── KPIs ───────────────────────────────────────────────────────────────
 async function loadKPIs(q) {
   const d = await fetch('/api/kpis' + q).then(r => r.json());
   const set = (id, val) => { const e = document.getElementById(id); if(e){e.classList.remove('pending');e.textContent=val;} };
@@ -282,18 +276,15 @@ async function loadKPIs(q) {
   set('kv-vagas',  fmtK(d.total_vagas));
   set('kv-ocp',    d.taxa_ocupacao + '%');
   set('kv-cursos', fmtK(d.total_cursos));
-
   const g = await fetch('/api/ingressantes/genero' + q).then(r => r.json());
   const fem  = g.find(x => x.genero === 'Feminino')?.valor  || 0;
   const masc = g.find(x => x.genero === 'Masculino')?.valor || 0;
   const tot  = fem + masc || 1;
   set('kv-fem',  fmtK(fem));  set('ks-fem',  pct(fem,  tot));
   set('kv-masc', fmtK(masc)); set('ks-masc', pct(masc, tot));
-
   document.querySelectorAll('.kpi-cell').forEach((el, i) => setTimeout(() => el.classList.add('lit'), i * 80));
 }
 
-// ── Load all ───────────────────────────────────────────────────────────
 async function loadAll() {
   ['kv-ing','kv-fem','kv-masc','kv-vagas','kv-ocp','kv-cursos'].forEach(id => {
     const e = document.getElementById(id);
@@ -302,14 +293,14 @@ async function loadAll() {
 
   const q = qs(gf());
 
-  const [area, reg, uf, mod, gen, cursos, ies] = await Promise.all([
-    fetch('/api/ingressantes/area'      + q).then(r => r.json()),
-    fetch('/api/ingressantes/regiao'    + q).then(r => r.json()),
-    fetch('/api/ingressantes/uf'        + q).then(r => r.json()),
-    fetch('/api/ingressantes/modalidade'+ q).then(r => r.json()),
-    fetch('/api/ingressantes/genero'    + q).then(r => r.json()),
-    fetch('/api/ingressantes/cursos_top'+ q).then(r => r.json()),
-    fetch('/api/ingressantes/ies_top'   + q).then(r => r.json()),
+  const [area, evo, reg, mod, gen, cursos, ies] = await Promise.all([
+    fetch('/api/ingressantes/area'       + q).then(r => r.json()),
+    fetch('/api/censo/evolucao'          + q + (q ? '&' : '?') + 'metrica=ingressantes').then(r => r.json()),
+    fetch('/api/ingressantes/regiao'     + q).then(r => r.json()),
+    fetch('/api/ingressantes/modalidade' + q).then(r => r.json()),
+    fetch('/api/ingressantes/genero'     + q).then(r => r.json()),
+    fetch('/api/ingressantes/cursos_top' + q).then(r => r.json()),
+    fetch('/api/ingressantes/ies_top'    + q).then(r => r.json()),
   ]);
 
   loadKPIs(q);
@@ -318,13 +309,16 @@ async function loadAll() {
   showC('l-area','c-area');
   mkBar('c-area', area.map(r => r.area.length>40?r.area.slice(0,40)+'…':r.area), area.map(r=>r.ingressantes), true);
 
+  // Evolução censal (linha)
+  showC('l-evo','c-evo');
+  mkLine('c-evo',
+    evo.map(r => r.ano),
+    [{ label: 'Ingressantes', data: evo.map(r => r.valor), color: '#22d3ee' }]
+  );
+
   // Região
   showC('l-reg','c-reg');
   mkBar('c-reg', reg.map(r=>r.regiao), reg.map(r=>r.ingressantes), false, '#22d3eeb0');
-
-  // UF
-  showC('l-uf','c-uf');
-  mkBar('c-uf', uf.map(r=>r.uf), uf.map(r=>r.ingressantes), false, '#a3e635b0');
 
   // Modalidade donut
   showC('l-mod','c-mod');

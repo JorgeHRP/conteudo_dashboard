@@ -467,47 +467,6 @@ def create_app():
             for _, r in agg.iterrows()
         ])
 
-    @app.route("/api/censo/evolucao/modalidade")
-    @auth.login_required
-    def api_censo_evolucao_modalidade():
-        """
-        Retorna evolução anual de matrículas separada por modalidade.
-        Responde com 3 séries: Presencial, EAD, Semi-presencial.
-        Respeita os mesmos filtros das outras abas.
-        """
-        params = get_filters()
-        df     = aplicar_filtros(get_evolucao(), params)
-
-        if df.empty:
-            return jsonify([])
-
-        MAP = {"1": "Presencial", "2": "EAD", "3": "Semi-presencial"}
-        df = df.copy()
-        df["MODALIDADE_LABEL"] = df["TP_MODALIDADE_ENSINO"].map(MAP).fillna("Outro")
-
-        agg = (
-            df.groupby(["NU_ANO_CENSO", "MODALIDADE_LABEL"])["QT_MAT"]
-            .sum()
-            .reset_index()
-            .sort_values("NU_ANO_CENSO")
-        )
-
-        anos       = sorted(agg["NU_ANO_CENSO"].unique().tolist())
-        modalidades = ["Presencial", "EAD", "Semi-presencial"]
-
-        series = []
-        for mod in modalidades:
-            subset = agg[agg["MODALIDADE_LABEL"] == mod].set_index("NU_ANO_CENSO")
-            series.append({
-                "modalidade": mod,
-                "dados": [
-                    {"ano": a, "valor": int(subset.loc[a, "QT_MAT"]) if a in subset.index else 0}
-                    for a in anos
-                ]
-            })
-
-        return jsonify(series)
-
     # ─── FUNIL ───────────────────────────────────────────────
 
     @app.route("/dashboard/funil")

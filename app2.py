@@ -2,7 +2,7 @@ from datetime import timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, abort
 import auth
 import config
-from data.loader import start_loader, aplicar_filtros, get_cursos, get_ies, uniq as _uniq
+from data.loader import start_loader, aplicar_filtros, get_cursos, get_ies, get_evolucao, uniq as _uniq
 
 def create_app():
     app = Flask(__name__)
@@ -419,6 +419,54 @@ def create_app():
             {"genero": "Masculino", "valor": int(df["QT_MAT_MASC"].sum())},
         ])
 
+    # ─── EVOLUÇÃO CENSAL (2020-2024) ─────────────────────────
+
+    @app.route("/api/censo/evolucao")
+    @auth.login_required
+    def api_censo_evolucao():
+        """
+        Retorna evolução anual de matrículas, ingressantes e concluintes.
+        Respeita os mesmos filtros das outras abas.
+        Parâmetro extra: metrica = 'matriculas' | 'ingressantes' | 'concluintes' | 'todas'
+        """
+        params  = get_filters()
+        metrica = request.args.get("metrica", "todas")
+        df      = aplicar_filtros(get_evolucao(), params)
+
+        if df.empty:
+            return jsonify([])
+
+        agg = (
+            df.groupby("NU_ANO_CENSO")[["QT_MAT", "QT_ING", "QT_CONC"]]
+            .sum()
+            .reset_index()
+            .sort_values("NU_ANO_CENSO")
+        )
+
+        col_map = {
+            "matriculas":   "QT_MAT",
+            "ingressantes": "QT_ING",
+            "concluintes":  "QT_CONC",
+        }
+
+        if metrica in col_map:
+            col = col_map[metrica]
+            return jsonify([
+                {"ano": r["NU_ANO_CENSO"], "valor": int(r[col])}
+                for _, r in agg.iterrows()
+            ])
+
+        # metrica == "todas" — retorna as três séries
+        return jsonify([
+            {
+                "ano":         r["NU_ANO_CENSO"],
+                "matriculas":  int(r["QT_MAT"]),
+                "ingressantes":int(r["QT_ING"]),
+                "concluintes": int(r["QT_CONC"]),
+            }
+            for _, r in agg.iterrows()
+        ])
+
     # ─── FUNIL ───────────────────────────────────────────────
 
     @app.route("/dashboard/funil")
@@ -490,6 +538,14 @@ def create_app():
             "QT_CONC":"concluintes","NO_IES":"ies","SG_IES":"sigla",
             "SG_UF_IES":"uf","TP_ORGANIZACAO_ACADEMICA":"org",
         }).to_dict(orient="records"))
+
+    # ─── VERSUS ──────────────────────────────────────────────
+
+    @app.route("/dashboard/versus")
+    @auth.login_required
+    @auth.module_required("versus")
+    def versus():
+        return render_template("dashboard/versus.html", **dash_ctx("versus"))
 
     # ─── ADMIN ───────────────────────────────────────────────
 
@@ -604,4 +660,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)

@@ -10,11 +10,14 @@ from pathlib import Path
 BASE   = Path(__file__).parent.parent / "parquet"
 F_CUR  = BASE / "MICRODADOS_CADASTRO_CURSOS_2024.parquet"
 F_IES  = BASE / "MICRODADOS_ED_SUP_IES_2024.parquet"
+F_EVO  = BASE / "EVOLUCAO_CENSO_2020_2024.parquet"
 
 # ── Globals ────────────────────────────────────────────────────────────
-_cursos: pd.DataFrame | None = None
-_ies:    pd.DataFrame | None = None
-_lock   = threading.Lock()
+_cursos:   pd.DataFrame | None = None
+_ies:      pd.DataFrame | None = None
+_evolucao: pd.DataFrame | None = None
+_lock      = threading.Lock()
+_ready     = threading.Event()
 
 # ── Mapa de modalidade ──────────────────────────────────────────────────
 MODALIDADE_MAP = {"1": "Presencial", "2": "EAD", "3": "Semi-presencial"}
@@ -29,12 +32,13 @@ REDE_MAP = {
 
 # ── Loader interno ─────────────────────────────────────────────────────
 def _load():
-    global _cursos, _ies
+    global _cursos, _ies, _evolucao
 
     cur = pd.read_parquet(F_CUR)
     ies = pd.read_parquet(F_IES)
+    evo = pd.read_parquet(F_EVO)
 
-    # ── Normaliza tipos ────────────────────────────────────────────────
+    # ── Normaliza tipos — cursos ───────────────────────────────────────
     cur["TP_MODALIDADE_ENSINO"] = cur["TP_MODALIDADE_ENSINO"].astype(str)
     cur["TP_REDE"]              = cur["TP_REDE"].astype(str)
     cur["CO_IES"]               = cur["CO_IES"].astype(str)
@@ -46,56 +50,73 @@ def _load():
         if col in cur.columns:
             cur[col] = pd.to_numeric(cur[col], errors="coerce").fillna(0).astype(int)
 
-    # ── Join cursos ↔ IES para ter NO_IES, SG_IES, TP_ORGANIZACAO no df de cursos
+    # ── Join cursos ↔ IES ──────────────────────────────────────────────
     ies_join = ies[["CO_IES", "NO_IES", "SG_IES",
                     "TP_ORGANIZACAO_ACADEMICA", "NO_REGIAO_IES",
                     "NO_MUNICIPIO_IES", "SG_UF_IES"]].copy()
-
     cur = cur.merge(ies_join, on="CO_IES", how="left", suffixes=("", "_ies"))
 
-    # ── Microrregião: se não existir na coluna, deriva do município ────
     if "NO_MICRORREGIAO" not in cur.columns:
         cur["NO_MICRORREGIAO"] = cur.get("NO_MUNICIPIO", pd.Series(dtype=str))
 
-    # ── Label legível de rede ──────────────────────────────────────────
     cur["TP_REDE_LABEL"] = cur["TP_REDE"].map(REDE_MAP).fillna("Outro")
 
+    # ── Normaliza tipos — evolução ─────────────────────────────────────
+    evo["NU_ANO_CENSO"]         = evo["NU_ANO_CENSO"].astype(str)
+    evo["TP_MODALIDADE_ENSINO"] = evo["TP_MODALIDADE_ENSINO"].astype(str)
+    evo["TP_REDE"]              = evo["TP_REDE"].astype(str)
+    evo["CO_IES"]               = evo["CO_IES"].astype(str)
+
+    for col in ["QT_MAT", "QT_ING", "QT_CONC", "QT_VG_TOTAL"]:
+        evo[col] = pd.to_numeric(evo[col], errors="coerce").fillna(0).astype(int)
+
+    evo["TP_REDE_LABEL"] = evo["TP_REDE"].map(REDE_MAP).fillna("Outro")
+
     with _lock:
-        _cursos = cur
-        _ies    = ies
+        _cursos   = cur
+        _ies      = ies
+        _evolucao = evo
 
 
 def start_loader():
     """Chama _load() em background para não bloquear o boot do Flask."""
-    t = threading.Thread(target=_load, daemon=True)
+    def _run():
+        _load()
+        _ready.set()
+    t = threading.Thread(target=_run, daemon=True)
     t.start()
+
+
+def _wait(timeout: int = 60):
+    """Bloqueia até os dados estarem prontos (máx. timeout segundos)."""
+    if not _ready.wait(timeout):
+        raise RuntimeError("Timeout ao aguardar carregamento dos dados.")
 
 
 # ── Accessors ──────────────────────────────────────────────────────────
 def get_cursos() -> pd.DataFrame:
+    _wait()
     with _lock:
-        if _cursos is None:
-            raise RuntimeError("Dados ainda não carregados. Aguarde.")
         return _cursos
 
 
 def get_ies() -> pd.DataFrame:
+    _wait()
     with _lock:
-        if _ies is None:
-            raise RuntimeError("Dados ainda não carregados. Aguarde.")
         return _ies
+
+
+def get_evolucao() -> pd.DataFrame:
+    _wait()
+    with _lock:
+        return _evolucao
 
 
 # ── Filtro genérico ────────────────────────────────────────────────────
 def aplicar_filtros(df: pd.DataFrame, params: dict, prefixo: str = "") -> pd.DataFrame:
-    """
-    Aplica os filtros do params ao DataFrame.
-    Suporta prefixo para evitar colisão quando chamado sobre o df de IES.
-    """
     if df is None or df.empty:
         return df
 
-    # Mapeamento chave_param → coluna_dataframe
     mapa = {
         "regiao":        "NO_REGIAO",
         "uf":            "SG_UF",
@@ -106,14 +127,12 @@ def aplicar_filtros(df: pd.DataFrame, params: dict, prefixo: str = "") -> pd.Dat
         "org_academica": "TP_ORGANIZACAO_ACADEMICA",
         "microrregiao":  "NO_MICRORREGIAO",
         "municipio":     "NO_MUNICIPIO",
-        # filtros IES
         "co_ies":        "CO_IES",
         "no_ies":        "NO_IES",
         "sg_ies":        "SG_IES",
         "tipo_ies":      "TP_ORGANIZACAO_ACADEMICA",
     }
 
-    # Se chamado com prefixo="ies", usa colunas do df de IES
     if prefixo == "ies":
         mapa = {
             "uf":            "SG_UF_IES",

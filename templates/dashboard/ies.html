@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Top IES — Conteúdo Insights{% endblock %}
 {% block page_title %}Top IES{% endblock %}
-{% block page_crumb %}CENSO · 2024 · RANKING DE INSTITUIÇÕES{% endblock %}
+{% block page_crumb %}CENSO · 2020–2024 · RANKING DE INSTITUIÇÕES{% endblock %}
 
 {% block filters %}
 <div class="fbar">
@@ -108,7 +108,21 @@
   </div>
 </div>
 
-<!-- ── ROW 2: Org + Rede + Modalidade (3 donuts) ────────────────────── -->
+<!-- ── ROW 2: Evolução censal (3 séries) ────────────────────────────── -->
+<div class="grid" style="grid-template-columns:1fr">
+  <div class="panel" style="border-right:none">
+    <div class="ph">
+      <span class="ph-title">Evolução das Instituições</span>
+      <span class="ph-tag">MATRÍCULAS · INGRESSANTES · CONCLUINTES · 2020–2024</span>
+    </div>
+    <div class="pb">
+      <div class="cload" id="l-evo"><div class="spin"></div>CARREGANDO</div>
+      <canvas id="c-evo" style="display:none;max-height:240px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 3: Org + Rede + Modalidade (3 donuts) ────────────────────── -->
 <div class="grid g-3333">
   <div class="panel">
     <div class="ph"><span class="ph-title">Por Organização Acadêmica</span></div>
@@ -138,17 +152,6 @@
         <canvas id="c-mod" style="display:none"></canvas>
       </div>
       <div class="dleg" id="leg-mod" style="flex:1"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── ROW 3: IES por UF ─────────────────────────────────────────────── -->
-<div class="grid" style="grid-template-columns:1fr">
-  <div class="panel" style="border-right:none">
-    <div class="ph"><span class="ph-title">Matrículas por Estado</span><span class="ph-tag">TOP 15 UF</span></div>
-    <div class="pb">
-      <div class="cload" id="l-uf"><div class="spin"></div>CARREGANDO</div>
-      <canvas id="c-uf" style="display:none;max-height:200px"></canvas>
     </div>
   </div>
 </div>
@@ -198,7 +201,6 @@
             padding:3px 10px;cursor:pointer;letter-spacing:.05em">✕ FECHAR</button>
   </div>
 
-  <!-- KPIs do detalhe -->
   <div class="kpi-strip" style="grid-template-columns:repeat(4,1fr)">
     <div class="kpi-cell">
       <div class="kpi-tag">MATRÍCULAS</div>
@@ -218,7 +220,6 @@
     </div>
   </div>
 
-  <!-- Cursos da IES selecionada -->
   <div class="grid" style="grid-template-columns:1fr">
     <div class="panel" style="border-right:none">
       <div class="ph">
@@ -252,8 +253,6 @@
 
 {% block scripts %}
 <script>
-// ── Helpers ────────────────────────────────────────────────────────────
-
 const MODAL_MAP = {'1':'Presencial','2':'EAD','3':'Semi-presencial'};
 
 function gf() {
@@ -286,20 +285,16 @@ function limpar() {
   loadAll();
 }
 
-// ── IES Typeahead ──────────────────────────────────────────────────────
 function setupIesTypeahead(lista) {
   const input = document.getElementById('f-ies-input');
   const dd    = document.getElementById('ies-dd');
   const coInp = document.getElementById('f-ies-co');
   if (!input || !dd) return;
   let _open = false;
-
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (q.length < 2) { dd.style.display = 'none'; return; }
-    const hits = lista
-      .filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q))
-      .slice(0, 40);
+    const hits = lista.filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q)).slice(0,40);
     if (!hits.length) { dd.style.display = 'none'; return; }
     dd.innerHTML = hits.map(x => `
       <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}"
@@ -313,93 +308,64 @@ function setupIesTypeahead(lista) {
       el.addEventListener('mouseenter', () => el.style.background = 'var(--bg3)');
       el.addEventListener('mouseleave', () => el.style.background = '');
       el.addEventListener('click', () => {
-        input.value = el.dataset.nome;
-        coInp.value = el.dataset.co;
-        dd.style.display = 'none';
-        _open = false;
+        input.value = el.dataset.nome; coInp.value = el.dataset.co;
+        dd.style.display = 'none'; _open = false;
       });
     });
-    dd.style.display = 'block';
-    _open = true;
+    dd.style.display = 'block'; _open = true;
   });
   document.addEventListener('click', e => {
-    if (_open && !dd.contains(e.target) && e.target !== input) {
-      dd.style.display = 'none'; _open = false;
-    }
+    if (_open && !dd.contains(e.target) && e.target !== input) { dd.style.display = 'none'; _open = false; }
   });
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; }
-  });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; } });
 }
 
-// ── Init filtros ───────────────────────────────────────────────────────
 async function initFilters() {
   const d = await fetch('/api/filtros').then(r => r.json());
-  const fill = (id, items) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    items.forEach(v => el.add(new Option(v, v)));
-  };
-  fill('f-reg',   d.regioes        || []);
-  fill('f-uf',    d.ufs            || []);
-  fill('f-micro', d.microrregioes  || []);
-  fill('f-mun',   d.municipios     || []);
-  fill('f-rede',  d.redes          || []);
-  fill('f-org',   d.org_academica  || []);
-  fill('f-area',  d.areas          || []);
+  const fill = (id, items) => { const el = document.getElementById(id); if (!el) return; items.forEach(v => el.add(new Option(v,v))); };
+  fill('f-reg',   d.regioes       || []);
+  fill('f-uf',    d.ufs           || []);
+  fill('f-micro', d.microrregioes || []);
+  fill('f-mun',   d.municipios    || []);
+  fill('f-rede',  d.redes         || []);
+  fill('f-org',   d.org_academica || []);
+  fill('f-area',  d.areas         || []);
   setupIesTypeahead(d.ies_lista || []);
 }
 
-// ── KPIs ───────────────────────────────────────────────────────────────
 async function loadKPIs(q) {
-  const [kpis, iesCount] = await Promise.all([
-    fetch('/api/kpis' + q).then(r => r.json()),
+  const [kpis, iesData] = await Promise.all([
+    fetch('/api/kpis'    + q).then(r => r.json()),
     fetch('/api/ies/top' + q).then(r => r.json()),
   ]);
-  const set = (id, val) => {
-    const e = document.getElementById(id);
-    if (e) { e.classList.remove('pending'); e.textContent = val; }
-  };
-  set('kv-ies',    fmt(kpis.total_ies));
+  const set = (id, val) => { const e = document.getElementById(id); if (e) { e.classList.remove('pending'); e.textContent = val; } };
+  set('kv-ies',    fmt(iesData.length));
   set('kv-mat',    fmtK(kpis.total_matriculas));
   set('kv-ing',    fmtK(kpis.total_ingressantes));
   set('kv-conc',   fmtK(kpis.total_concluintes));
   set('kv-ocp',    kpis.taxa_ocupacao + '%');
   set('kv-tconcl', kpis.taxa_conclusao + '%');
-  document.querySelectorAll('.kpi-cell').forEach((c, i) =>
-    setTimeout(() => c.classList.add('lit'), i * 70)
-  );
+  document.querySelectorAll('.kpi-cell').forEach((c, i) => setTimeout(() => c.classList.add('lit'), i * 70));
 }
 
-// ── Detalhe IES ────────────────────────────────────────────────────────
 async function abrirDetalhe(coIes, nomeIes, sigla, uf, org, mat, ing, conc, share) {
   const det = document.getElementById('ies-detail');
   det.style.display = 'block';
   det.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  // Cabeçalho
   const nomeFull = sigla ? `${nomeIes} (${sigla})` : nomeIes;
   document.getElementById('det-nome').textContent = nomeFull;
-  document.getElementById('det-meta').textContent =
-    [uf, org].filter(Boolean).join(' · ');
+  document.getElementById('det-meta').textContent = [uf, org].filter(Boolean).join(' · ');
   document.getElementById('det-ph-tag').textContent = sigla || nomeIes;
-
-  // KPIs do detalhe
   document.getElementById('det-mat').textContent   = fmtK(mat);
   document.getElementById('det-ing').textContent   = fmtK(ing);
   document.getElementById('det-conc').textContent  = fmtK(conc);
   document.getElementById('det-share').textContent = share + '%';
-
-  // Reset tabela de cursos
   const lDet = document.getElementById('l-det-cur');
   const tDet = document.getElementById('t-det-cur');
   if (lDet) { lDet.style.display = 'flex'; lDet.innerHTML = '<div class="spin"></div>CARREGANDO'; }
   if (tDet) tDet.style.display = 'none';
-
-  // Busca cursos da IES
   const q = qs({ ...gf(), co_ies: coIes });
   const cursos = await fetch('/api/cursos/top' + q).then(r => r.json());
-
   const tb = document.getElementById('tb-det-cur');
   if (tb) {
     tb.innerHTML = cursos.map((r, i) => {
@@ -426,7 +392,6 @@ function fecharDetalhe() {
   if (det) det.style.display = 'none';
 }
 
-// ── Load all ───────────────────────────────────────────────────────────
 async function loadAll() {
   ['kv-ies','kv-mat','kv-ing','kv-conc','kv-ocp','kv-tconcl'].forEach(id => {
     const e = document.getElementById(id);
@@ -436,19 +401,13 @@ async function loadAll() {
 
   const q = qs(gf());
 
-  const [ies, org, rede, mod, uf, cursosTop] = await Promise.all([
+  const [ies, evo, rede, mod, cursosTop] = await Promise.all([
     fetch('/api/ies/top'              + q).then(r => r.json()),
-    fetch('/api/matriculas/modalidade'+ q).then(r => r.json()),  // reutiliza endpoint
+    fetch('/api/censo/evolucao'       + q + (q ? '&' : '?') + 'metrica=todas').then(r => r.json()),
     fetch('/api/matriculas/rede'      + q).then(r => r.json()),
     fetch('/api/matriculas/modalidade'+ q).then(r => r.json()),
-    fetch('/api/matriculas/uf'        + q).then(r => r.json()),
     fetch('/api/cursos/top'           + q).then(r => r.json()),
   ]);
-
-  // Org acadêmica — agrupa do próprio ies
-  const orgCounts = {};
-  ies.forEach(r => { orgCounts[r.org||'Outro'] = (orgCounts[r.org||'Outro']||0) + r.matriculas; });
-  const orgData = Object.entries(orgCounts).sort((a,b) => b[1]-a[1]);
 
   loadKPIs(q);
 
@@ -457,7 +416,7 @@ async function loadAll() {
   if (tbIes) {
     const maxMat = ies[0]?.matriculas || 1;
     tbIes.innerHTML = ies.map((r, i) => {
-      const ocup  = pct(r.ingressantes, r.vagas   || 0);
+      const ocup  = pct(r.ingressantes, r.vagas    || 0);
       const concl = pct(r.concluintes,  r.matriculas);
       return `
         <tr style="cursor:pointer" onclick="abrirDetalhe(
@@ -488,7 +447,21 @@ async function loadAll() {
   }
   showT('l-ies', 't-ies');
 
+  // ── Evolução censal — 3 séries ────────────────────────────────────
+  showC('l-evo', 'c-evo');
+  mkLine('c-evo',
+    evo.map(r => r.ano),
+    [
+      { label: 'Matrículas',   data: evo.map(r => r.matriculas),   color: '#00e0e0' },
+      { label: 'Ingressantes', data: evo.map(r => r.ingressantes), color: '#a060e0' },
+      { label: 'Concluintes',  data: evo.map(r => r.concluintes),  color: '#f59e0b' },
+    ]
+  );
+
   // ── Donut Org acadêmica ───────────────────────────────────────────
+  const orgCounts = {};
+  ies.forEach(r => { orgCounts[r.org||'Outro'] = (orgCounts[r.org||'Outro']||0) + r.matriculas; });
+  const orgData = Object.entries(orgCounts).sort((a,b) => b[1]-a[1]);
   showC('l-org', 'c-org');
   mkDonut('c-org', orgData.map(d => d[0]), orgData.map(d => d[1]), 'leg-org');
 
@@ -501,11 +474,6 @@ async function loadAll() {
   showC('l-mod', 'c-mod');
   mkDonut('c-mod', mod.map(r => r.modalidade), mod.map(r => r.matriculas), 'leg-mod',
     ['#a3e635','#22d3ee','#f59e0b']);
-
-  // ── UF barras ─────────────────────────────────────────────────────
-  showC('l-uf', 'c-uf');
-  mkBar('c-uf', uf.slice(0,15).map(r => r.uf), uf.slice(0,15).map(r => r.matriculas),
-    false, '#a3e635b0');
 
   // ── Tabela top cursos ──────────────────────────────────────────────
   const tbCur = document.getElementById('tb-cur');
@@ -534,7 +502,6 @@ async function loadAll() {
     true, '#22d3eeb0');
 }
 
-// ── Boot ───────────────────────────────────────────────────────────────
 (async () => {
   await initFilters();
   loadAll();

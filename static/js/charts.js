@@ -113,6 +113,84 @@ function mkDonut(id, labels, data, legId, cols=null) {
     </div>`).join('');
 }
 
+// ── Line chart ───────────────────────────────────────
+/**
+ * mkLine(id, labels, datasets, legId?)
+ *
+ * datasets: array de objetos { label, data, color? }
+ * legId:    id do elemento onde renderizar legenda (opcional)
+ *
+ * Exemplo — uma série:
+ *   mkLine('c-evo', ['2020','2021','2022','2023','2024'],
+ *          [{ label:'Matrículas', data:[...] }])
+ *
+ * Exemplo — múltiplas séries:
+ *   mkLine('c-evo', anos,
+ *          [{ label:'Matrículas', data:[...] },
+ *           { label:'Ingressantes', data:[...], color:'#a060e0' },
+ *           { label:'Concluintes', data:[...], color:'#f0a030' }],
+ *          'leg-evo')
+ */
+function mkLine(id, labels, datasets, legId=null) {
+  kill(id);
+  const ctx = document.getElementById(id); if (!ctx) return;
+  const PAL = ['#00e0e0','#a060e0','#f0a030','#4080f0','#f06060','#00c8a0'];
+  const c   = getThemeColors();
+
+  const chartDatasets = datasets.map((ds, i) => {
+    const color = ds.color || PAL[i % PAL.length];
+    return {
+      label:           ds.label,
+      data:            ds.data,
+      borderColor:     color,
+      backgroundColor: color + '18',
+      pointBackgroundColor: color,
+      pointRadius:     4,
+      pointHoverRadius:6,
+      borderWidth:     2,
+      tension:         0.35,
+      fill:            datasets.length === 1, // área só quando série única
+    };
+  });
+
+  const opts = baseOpts();
+  // tooltip multi-série
+  opts.plugins.tooltip.callbacks = {
+    label: x => `  ${x.dataset.label}: ${Number(x.raw).toLocaleString('pt-BR')}`,
+  };
+  // legenda nativa apenas quando legId não fornecido e há >1 série
+  if (!legId && datasets.length > 1) {
+    opts.plugins.legend = {
+      display: true,
+      labels: { color: c.tick, font: { family:"'DM Mono'", size:11 }, boxWidth:12, padding:16 },
+    };
+  }
+  opts.scales.y.ticks.callback = v => fmtK(v);
+
+  _CH[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: chartDatasets },
+    options: opts,
+  });
+
+  // Legenda manual (mesmo padrão dos donuts)
+  if (legId) {
+    const leg = document.getElementById(legId);
+    if (leg) leg.innerHTML = datasets.map((ds, i) => {
+      const color = ds.color || PAL[i % PAL.length];
+      const last  = ds.data[ds.data.length - 1] ?? 0;
+      return `
+        <div class="dleg-row">
+          <div class="dleg-l">
+            <div class="dleg-dot" style="background:${color}"></div>
+            <span>${ds.label}</span>
+          </div>
+          <span class="dleg-v">${fmtK(last)}</span>
+        </div>`;
+    }).join('');
+  }
+}
+
 // ── Theme update for existing charts ────────────────
 document.getElementById('themeBtn')?.addEventListener('click', () => {
   setTimeout(() => {
