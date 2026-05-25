@@ -38,7 +38,7 @@ def create_app():
         return {k: request.args.get(k) for k in [
             "regiao", "uf", "modalidade", "area", "rede",
             "grau", "org_academica", "microrregiao", "municipio",
-            "co_ies", "no_ies", "sg_ies", "tipo_ies",
+            "co_ies", "no_ies", "sg_ies", "tipo_ies", "no_curso",
         ]}
 
     def kpi_data(params):
@@ -126,6 +126,7 @@ def create_app():
                 .rename(columns={"CO_IES": "co", "NO_IES": "nome", "SG_IES": "sigla"})
                 .to_dict(orient="records")
             ),
+            "cursos_lista": _uniq(cursos, "NO_CURSO"),
         }
         return jsonify(cache_set("filtros", data))
 
@@ -633,11 +634,14 @@ def create_app():
         user = auth.get_current_user()
         ctx = {"current_user": user, "allowed_modules": config.MODULOS, "active_module": "admin"}
         if request.method == "POST":
-            username = request.form.get("username", "").strip()
-            email    = request.form.get("email", "").strip()
-            password = request.form.get("password", "")
-            role     = request.form.get("role", "viewer")
-            modulos  = request.form.getlist("modulos")
+            username    = request.form.get("username", "").strip()
+            email       = request.form.get("email", "").strip()
+            password    = request.form.get("password", "")
+            role        = request.form.get("role", "viewer")
+            modulos     = request.form.getlist("modulos")
+            instituicao = request.form.get("instituicao", "").strip() or None
+            cargo       = request.form.get("cargo", "").strip() or None
+            telefone    = request.form.get("telefone", "").strip() or None
             if not username or not password:
                 flash("Usuário e senha são obrigatórios.", "error")
                 return render_template("admin/user_form.html", action="novo", modulos=config.MODULOS, **ctx)
@@ -646,6 +650,7 @@ def create_app():
                     "username": username, "email": email,
                     "password_hash": auth.hash_password(password),
                     "role": role, "ativo": "true",
+                    "instituicao": instituicao, "cargo": cargo, "telefone": telefone,
                 }).execute()
                 user_id = str(res.data[0]["id"])
                 if role == "viewer" and modulos:
@@ -725,4 +730,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

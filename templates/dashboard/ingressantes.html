@@ -9,8 +9,6 @@
     <select class="fi-sel" id="f-reg"><option value="">TODAS</option></select></div>
   <div class="fi"><span class="fi-lbl">UF</span>
     <select class="fi-sel" id="f-uf"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">MICRORREGIÃO</span>
-    <select class="fi-sel" id="f-micro" style="max-width:160px"><option value="">TODAS</option></select></div>
   <div class="fi"><span class="fi-lbl">MUNICÍPIO</span>
     <select class="fi-sel" id="f-mun" style="max-width:160px"><option value="">TODOS</option></select></div>
   <div class="fi"><span class="fi-lbl">MODALIDADE</span>
@@ -24,18 +22,23 @@
     <select class="fi-sel" id="f-area" style="max-width:160px"><option value="">TODAS</option></select></div>
   <div class="fi"><span class="fi-lbl">REDE</span>
     <select class="fi-sel" id="f-rede"><option value="">TODAS</option></select></div>
-  <div class="fi"><span class="fi-lbl">GRAU</span>
-    <select class="fi-sel" id="f-grau" style="max-width:140px"><option value="">TODOS</option></select></div>
-  <div class="fi"><span class="fi-lbl">ORG. ACAD.</span>
-    <select class="fi-sel" id="f-org" style="max-width:160px"><option value="">TODAS</option></select></div>
+  <div class="fi" style="position:relative">
+    <span class="fi-lbl">CURSO</span>
+    <input type="text" id="f-curso-input" class="fi-sel" placeholder="buscar curso…"
+           autocomplete="off" style="max-width:180px;cursor:text">
+    <div id="curso-dd" style="display:none;position:fixed;top:0;left:0;z-index:9999;
+         background:var(--bg-card);border:1px solid var(--line2);border-radius:var(--r-sm);
+         max-height:220px;overflow-y:auto;min-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.5)">
+    </div>
+  </div>
   <div class="fi" style="position:relative">
     <span class="fi-lbl">IES</span>
     <input type="text" id="f-ies-input" class="fi-sel" placeholder="buscar IES…"
            autocomplete="off" style="max-width:180px;cursor:text">
     <input type="hidden" id="f-ies-co">
-    <div id="ies-dd" style="display:none;position:absolute;top:34px;left:0;z-index:999;
-         background:var(--bg2);border:1px solid var(--line2);border-radius:2px;
-         max-height:220px;overflow-y:auto;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    <div id="ies-dd" style="display:none;position:fixed;top:0;left:0;z-index:9999;
+         background:var(--bg-card);border:1px solid var(--line2);border-radius:var(--r-sm);
+         max-height:220px;overflow-y:auto;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.5)">
     </div>
   </div>
   <div class="f-act">
@@ -194,13 +197,11 @@ function gf() {
   return {
     regiao:        v('f-reg'),
     uf:            v('f-uf'),
-    microrregiao:  v('f-micro'),
     municipio:     v('f-mun'),
     modalidade:    v('f-mod'),
     area:          v('f-area'),
     rede:          v('f-rede'),
-    grau:          v('f-grau'),
-    org_academica: v('f-org'),
+    no_curso:      v('f-curso-input'),
     co_ies:        v('f-ies-co'),
   };
 }
@@ -213,10 +214,9 @@ function qs(p) {
 function aplicar() { loadAll(); }
 
 function limpar() {
-  ['f-reg','f-uf','f-micro','f-mun','f-mod','f-area','f-rede','f-grau','f-org'].forEach(id => setV(id,''));
+  ['f-reg','f-uf','f-mun','f-mod','f-area','f-rede'].forEach(id => setV(id,''));
   setV('f-ies-co','');
-  const inp = document.getElementById('f-ies-input');
-  if (inp) inp.value = '';
+  ['f-ies-input','f-curso-input'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   loadAll();
 }
 
@@ -226,11 +226,15 @@ function setupIesTypeahead(lista) {
   const coInp = document.getElementById('f-ies-co');
   if (!input || !dd) return;
   let _open = false;
+  function _pos() { const r=input.getBoundingClientRect(); dd.style.top=(r.bottom+4)+'px'; dd.style.maxWidth=(window.innerWidth-16)+'px'; dd.style.left=Math.max(8,r.right-dd.offsetWidth)+'px'; }
+  function _close() { dd.style.display='none'; _open=false; window.removeEventListener('scroll',_pos,true); }
+  input.addEventListener('focus', () => { if (!_open) input.dispatchEvent(new Event('input')); });
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
-    if (q.length < 2) { dd.style.display = 'none'; return; }
-    const hits = lista.filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q)).slice(0,40);
-    if (!hits.length) { dd.style.display = 'none'; return; }
+    const hits = q.length < 2
+      ? lista
+      : lista.filter(x => x.nome.toLowerCase().includes(q) || (x.sigla||'').toLowerCase().includes(q)).slice(0, 40);
+    if (!hits.length) { _close(); return; }
     dd.innerHTML = hits.map(x => `
       <div class="ies-opt" data-co="${x.co}" data-nome="${x.nome}"
            style="padding:7px 12px;cursor:pointer;font-family:var(--mono);font-size:.68rem;
@@ -244,28 +248,28 @@ function setupIesTypeahead(lista) {
       el.addEventListener('mouseleave', () => el.style.background = '');
       el.addEventListener('click', () => {
         input.value = el.dataset.nome; coInp.value = el.dataset.co;
-        dd.style.display = 'none'; _open = false;
+        _close();
       });
     });
-    dd.style.display = 'block'; _open = true;
+    dd.style.display = 'block';
+    if (!_open) { _open=true; window.addEventListener('scroll',_pos,{passive:true,capture:true}); }
+    _pos();
   });
   document.addEventListener('click', e => {
-    if (_open && !dd.contains(e.target) && e.target !== input) { dd.style.display = 'none'; _open = false; }
+    if (_open && !dd.contains(e.target) && e.target !== input) { _close(); }
   });
-  input.addEventListener('keydown', e => { if (e.key === 'Escape') { dd.style.display = 'none'; _open = false; } });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { _close(); } });
 }
 
 async function initFilters() {
   const d = await fetch('/api/filtros').then(r => r.json());
   const fill = (id, items) => { const el = document.getElementById(id); if (!el) return; items.forEach(v => el.add(new Option(v,v))); };
-  fill('f-reg',   d.regioes        || []);
-  fill('f-uf',    d.ufs            || []);
-  fill('f-micro', d.microrregioes  || []);
-  fill('f-mun',   d.municipios     || []);
-  fill('f-area',  d.areas          || []);
-  fill('f-rede',  d.redes          || []);
-  fill('f-grau',  d.graus          || []);
-  fill('f-org',   d.org_academica  || []);
+  fill('f-reg',   d.regioes    || []);
+  fill('f-uf',    d.ufs        || []);
+  fill('f-mun',   d.municipios || []);
+  fill('f-area',  d.areas      || []);
+  fill('f-rede',  d.redes      || []);
+  setupCursoTypeahead(d.cursos_lista || []);
   setupIesTypeahead(d.ies_lista || []);
 }
 

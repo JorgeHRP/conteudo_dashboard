@@ -14,6 +14,43 @@ const rCls = i => ['g','s','b'][i] || '';
 const v    = id => { const e = document.getElementById(id); return e ? e.value : ''; };
 const setV = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
 
+// ── Typeahead de Curso (reutilizável por todas as páginas) ────────────
+function setupCursoTypeahead(lista) {
+  const input = document.getElementById('f-curso-input');
+  const dd    = document.getElementById('curso-dd');
+  if (!input || !dd) return;
+  let _open = false;
+  function _pos() { const r=input.getBoundingClientRect(); dd.style.top=(r.bottom+4)+'px'; dd.style.maxWidth=(window.innerWidth-16)+'px'; dd.style.left=Math.min(r.left,window.innerWidth-dd.offsetWidth-8)+'px'; }
+  function _close() { dd.style.display='none'; _open=false; window.removeEventListener('scroll',_pos,true); }
+  input.addEventListener('focus', () => { if (!_open) input.dispatchEvent(new Event('input')); });
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    const hits = q.length < 2
+      ? lista
+      : lista.filter(x => x.toLowerCase().includes(q)).slice(0, 40);
+    if (!hits.length) { _close(); return; }
+    dd.innerHTML = hits.map(x => `
+      <div class="curso-opt"
+           style="padding:7px 12px;cursor:pointer;font-family:var(--mono);font-size:.68rem;
+                  color:var(--tx1);border-bottom:1px solid var(--line);white-space:nowrap;
+                  overflow:hidden;text-overflow:ellipsis">
+        ${x}
+      </div>`).join('');
+    dd.querySelectorAll('.curso-opt').forEach(el => {
+      el.addEventListener('mouseenter', () => el.style.background = 'var(--bg-card2)');
+      el.addEventListener('mouseleave', () => el.style.background = '');
+      el.addEventListener('click', () => { input.value = el.textContent.trim(); _close(); });
+    });
+    dd.style.display = 'block';
+    if (!_open) { _open=true; window.addEventListener('scroll',_pos,{passive:true,capture:true}); }
+    _pos();
+  });
+  document.addEventListener('click', e => {
+    if (_open && !dd.contains(e.target) && e.target !== input) { _close(); }
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { _close(); } });
+}
+
 // ── Theme ───────────────────────────────────────────
 function getThemeColors() {
   const dark = document.documentElement.dataset.theme !== 'light';
@@ -32,7 +69,7 @@ function baseOpts() {
       tooltip: {
         backgroundColor: c.ttbg, borderColor: c.ttbrd, borderWidth:1,
         titleColor: c.tttxt, bodyColor: c.ttmut,
-        titleFont: { family:"'Syne'", weight:'700', size:12 },
+        titleFont: { family:"'Inter'", weight:'700', size:12 },
         bodyFont:  { family:"'DM Mono'", size:11 },
         padding:10, cornerRadius:2,
         callbacks: { label: x => '  '+Number(x.raw).toLocaleString('pt-BR') }

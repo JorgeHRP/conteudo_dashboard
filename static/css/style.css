@@ -4,7 +4,7 @@
    Brand: Cyan #00e0e0 → Purple #a060e0
 ═══════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&family=Inter:wght@700;800;900&display=swap');
 
 :root {
   --bg:      #0f1117;
@@ -17,8 +17,8 @@
   --line2:   rgba(255,255,255,0.10);
   --line3:   rgba(255,255,255,0.18);
   --tx0:     #e8edf5;
-  --tx1:     rgba(255,255,255,0.55);
-  --tx2:     rgba(255,255,255,0.28);
+  --tx1:     rgba(255,255,255,0.68);
+  --tx2:     rgba(255,255,255,0.44);
   --tx3:     rgba(255,255,255,0.12);
   --cyan:    #00e0e0;
   --purple:  #a060e0;
@@ -29,11 +29,11 @@
   --r-sm:    10px;
   --r-md:    14px;
   --r-lg:    18px;
-  --sb:      200px;
-  --tb:      52px;
+  --sb:      clamp(200px, 15vw, 240px);
+  --tb:      clamp(52px, 3.8vw, 62px);
   --sans:    'DM Sans', -apple-system, sans-serif;
   --mono:    'DM Mono', monospace;
-  --disp:    'Syne', 'DM Sans', sans-serif;
+  --disp:    'Inter', 'DM Sans', sans-serif;
   --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
   --shadow-hover: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.09);
 }
@@ -49,15 +49,15 @@
   --line2:   rgba(0,0,0,0.12);
   --line3:   rgba(0,0,0,0.20);
   --tx0:     #0c1018;
-  --tx1:     rgba(12,16,24,0.55);
-  --tx2:     rgba(12,16,24,0.30);
+  --tx1:     rgba(12,16,24,0.70);
+  --tx2:     rgba(12,16,24,0.50);
   --tx3:     rgba(12,16,24,0.12);
   --shadow-card: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
   --shadow-hover: 0 4px 20px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.09);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 13px; -webkit-font-smoothing: antialiased; }
+html { font-size: clamp(14px, 1.1vw, 17px); -webkit-font-smoothing: antialiased; }
 body { font-family: var(--sans); background: var(--bg); color: var(--tx0); min-height: 100vh; display: flex; }
 a { text-decoration: none; color: inherit; }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -191,7 +191,7 @@ a { text-decoration: none; color: inherit; }
 .cload { display: flex; align-items: center; justify-content: center; height: 180px; gap: 10px; font-family: var(--mono); font-size: .6rem; color: var(--tx3); letter-spacing: .1em; text-transform: uppercase; }
 .spin { width: 14px; height: 14px; border: 1.5px solid var(--line2); border-top-color: var(--cyan); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-canvas { max-height: 240px; }
+canvas { max-height: clamp(220px, 28vh, 340px); }
 
 /* DATA TABLE */
 .dt { width: 100%; border-collapse: collapse; font-size: .78rem; }
@@ -278,7 +278,37 @@ canvas { max-height: 240px; }
 .error-back { font-family: var(--mono); font-size: .72rem; color: var(--cyan); margin-top: 6px; }
 
 /* RESPONSIVE */
+@media (min-width: 1440px) {
+  .page-ct { padding: 24px 32px; }
+  .kpi-strip { gap: 14px; margin-bottom: 18px; }
+  .grid { gap: 14px; margin-bottom: 14px; }
+  .ph { height: 48px; }
+  .fbar { height: 50px; }
+}
+
+@media (min-width: 1800px) {
+  .page-ct { padding: 28px 44px; }
+  .kpi-strip { gap: 16px; margin-bottom: 22px; }
+  .grid { gap: 16px; margin-bottom: 16px; }
+  .ph { height: 52px; }
+  .fbar { height: 54px; }
+  .pb { padding: 20px 22px; }
+  .kpi-cell { padding: 20px 22px; }
+}
+
 @media (max-width: 1200px) { .kpi-strip { grid-template-columns: repeat(3, 1fr); } .g-6040, .g-7030 { grid-template-columns: 1fr; } }
+/* ── Typeahead dropdown scrollbars ──────────────────── */
+#curso-dd,
+#ies-dd { scrollbar-width: thin; scrollbar-color: var(--line3) transparent; }
+#curso-dd::-webkit-scrollbar,
+#ies-dd::-webkit-scrollbar  { width: 6px; }
+#curso-dd::-webkit-scrollbar-track,
+#ies-dd::-webkit-scrollbar-track  { background: transparent; }
+#curso-dd::-webkit-scrollbar-thumb,
+#ies-dd::-webkit-scrollbar-thumb  { background: var(--line3); border-radius: 3px; }
+#curso-dd::-webkit-scrollbar-thumb:hover,
+#ies-dd::-webkit-scrollbar-thumb:hover  { background: var(--cyan); }
+
 @media (max-width: 900px)  { .kpi-strip { grid-template-columns: repeat(2, 1fr); } .g-5050, .g-3333 { grid-template-columns: 1fr; } }
 @media (max-width: 760px)  {
   :root { --sb: 54px; }

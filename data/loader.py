@@ -131,6 +131,7 @@ def aplicar_filtros(df: pd.DataFrame, params: dict, prefixo: str = "") -> pd.Dat
         "no_ies":        "NO_IES",
         "sg_ies":        "SG_IES",
         "tipo_ies":      "TP_ORGANIZACAO_ACADEMICA",
+        "no_curso":      "NO_CURSO",
     }
 
     if prefixo == "ies":

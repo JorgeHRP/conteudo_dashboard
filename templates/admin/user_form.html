@@ -19,6 +19,9 @@
     <div class="fg"><label>Usuário</label><input type="text" name="username" required autofocus placeholder="nome.usuario"></div>
     <div class="fg"><label>Email</label><input type="email" name="email" placeholder="email@exemplo.com"></div>
     <div class="fg"><label>Senha</label><input type="password" name="password" required placeholder="••••••••"></div>
+    <div class="fg"><label>Instituição</label><input type="text" name="instituicao" placeholder="nome da instituição"></div>
+    <div class="fg"><label>Cargo</label><input type="text" name="cargo" placeholder="cargo ou função"></div>
+    <div class="fg"><label>Telefone</label><input type="text" name="telefone" id="f-tel" placeholder="(XX) XXXXX-XXXX" maxlength="15" inputmode="numeric" autocomplete="tel"></div>
     <div class="fg">
       <label>Role</label>
       <select name="role" id="role-sel" onchange="toggleModulos()">
@@ -115,5 +118,28 @@ function toggleModulos(){
   if(box) box.style.display = role === 'viewer' ? 'block' : 'none';
 }
 toggleModulos();
+
+const _tel = document.getElementById('f-tel');
+if (_tel) {
+  function fmtTel(v) {
+    const d = v.replace(/\D/g, '').slice(0, 11);
+    if (!d) return '';
+    if (d.length <= 2)  return '(' + d;
+    if (d.length <= 6)  return '(' + d.slice(0,2) + ') ' + d.slice(2);
+    if (d.length <= 10) return '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
+    return '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7);
+  }
+  _tel.addEventListener('input', function() {
+    const cur = this.selectionStart;
+    const before = this.value.slice(0, cur).replace(/\D/g,'').length;
+    this.value = fmtTel(this.value);
+  });
+  _tel.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && this.value.slice(-1).match(/[\s\-\(]/)) {
+      this.value = this.value.slice(0, -1);
+      e.preventDefault();
+    }
+  });
+}
 </script>
 {% endblock %}
