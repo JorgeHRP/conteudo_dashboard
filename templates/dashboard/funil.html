@@ -348,16 +348,17 @@ async function initFilters() {
 
 // ── Helper: monta linha de taxa ────────────────────────────────────────
 function taxaRow(label, vagas, ing, mat, conc) {
-  const ocup  = pct(ing,  vagas || 1);
-  const perm  = pct(mat,  ing   || 1);
-  const concl = pct(conc, mat   || 1);
-  const ocupCor  = parseFloat(ocup)  > 50 ? 'var(--green)' : 'var(--amber)';
+  const hasVagas = vagas != null && vagas > 0;
+  const ocup  = hasVagas ? pct(ing, vagas) : '—';
+  const perm  = pct(mat,  ing  || 1);
+  const concl = pct(conc, mat  || 1);
+  const ocupCor  = hasVagas && parseFloat(ocup) > 50 ? 'var(--green)' : 'var(--amber)';
   const permCor  = parseFloat(perm)  > 80 ? 'var(--cyan)'  : 'var(--amber)';
   const conclCor = parseFloat(concl) > 20 ? 'var(--green)' : 'var(--red)';
   return `
     <tr>
       <td style="font-size:.72rem">${label}</td>
-      <td class="num">${fmt(vagas)}</td>
+      <td class="num" style="color:var(--tx3)">${hasVagas ? fmt(vagas) : '—'}</td>
       <td class="num">${fmt(ing)}</td>
       <td class="num">${fmt(mat)}</td>
       <td class="num">${fmt(conc)}</td>
@@ -459,11 +460,10 @@ async function loadAll() {
   const tbMod = document.getElementById('tb-mod-taxa');
   if (tbMod) {
     tbMod.innerHTML = modalidades.map(m => {
-      const vVal = modMat.find(r => r.modalidade === m)?.matriculas || 0; // proxy
       const iVal = modIng.find(r => r.modalidade === m)?.ingressantes || 0;
       const mVal = modMat.find(r => r.modalidade === m)?.matriculas || 0;
       const cVal = modConc.find(r => r.modalidade === m)?.concluintes || 0;
-      return taxaRow(m, mVal, iVal, mVal, cVal);
+      return taxaRow(m, null, iVal, mVal, cVal);
     }).join('');
   }
   showT('l-mod-taxa', 't-mod-taxa');
@@ -503,7 +503,7 @@ async function loadAll() {
       const mVal = regMat.find(r => r.regiao === rg)?.matriculas || 0;
       const iVal = regIng.find(r => r.regiao === rg)?.ingressantes || 0;
       const cVal = regConc.find(r => r.regiao === rg)?.concluintes || 0;
-      return taxaRow(rg, mVal, iVal, mVal, cVal);
+      return taxaRow(rg, null, iVal, mVal, cVal);
     }).join('');
   }
   showT('l-reg-taxa', 't-reg-taxa');
@@ -522,7 +522,7 @@ async function loadAll() {
       const mVal = areaMat.find(r => r.area === ar)?.matriculas || 0;
       const iVal = areaIng.find(r => r.area === ar)?.ingressantes || 0;
       const cVal = areaConc.find(r => r.area === ar)?.concluintes || 0;
-      return taxaRow(ar.length > 50 ? ar.slice(0,50)+'…' : ar, mVal, iVal, mVal, cVal);
+      return taxaRow(ar.length > 50 ? ar.slice(0,50)+'…' : ar, null, iVal, mVal, cVal);
     }).join('');
   }
   showT('l-area-taxa', 't-area-taxa');

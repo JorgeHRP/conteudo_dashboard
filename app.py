@@ -47,12 +47,7 @@ def create_app():
         ing   = int(df["QT_ING"].sum())
         mat   = int(df["QT_MAT"].sum())
         conc  = int(df["QT_CONC"].sum())
-        # Vagas: soma total (maioria das IES não informa — campo opcional no censo)
         vagas = int(df["QT_VG_TOTAL"].sum()) if "QT_VG_TOTAL" in df.columns else 0
-        # Taxa de ocupação: só sobre cursos que reportaram vagas (95,8% têm vagas=0)
-        df_v  = df[df["QT_VG_TOTAL"] > 0] if "QT_VG_TOTAL" in df.columns else df.iloc[0:0]
-        vagas_rep = int(df_v["QT_VG_TOTAL"].sum())
-        ing_rep   = int(df_v["QT_ING"].sum())
         return {
             "total_matriculas":   mat,
             "total_ingressantes": ing,
@@ -60,7 +55,7 @@ def create_app():
             "total_vagas":        vagas,
             "total_cursos":       int(df["NO_CURSO"].nunique()) if "NO_CURSO" in df.columns else len(df),
             "total_ies":          len(ies),
-            "taxa_ocupacao":      round(ing_rep / vagas_rep * 100, 2) if vagas_rep else 0,
+            "taxa_ocupacao":      round(ing / vagas * 100, 2) if vagas else 0,
             "taxa_conclusao":     round(conc / mat * 100, 2) if mat else 0,
         }
 
@@ -266,12 +261,13 @@ def create_app():
     @app.route("/api/matriculas/grau")
     @auth.login_required
     def api_matriculas_grau():
-        """Distribuição por grau acadêmico (Bacharelado, Licenciatura, Tecnólogo…)."""
+        _GRAU = {"1": "Bacharelado", "2": "Licenciatura", "3": "Tecnológico"}
         df = aplicar_filtros(get_cursos(), get_filters())
         if "TP_GRAU_ACADEMICO" not in df.columns:
             return jsonify([])
         r = df.groupby("TP_GRAU_ACADEMICO")["QT_MAT"].sum().reset_index()
         r.columns = ["grau", "matriculas"]
+        r["grau"] = r["grau"].astype(str).str.split(".").str[0].map(lambda x: _GRAU.get(x, "Não informado"))
         return jsonify(r.sort_values("matriculas", ascending=False).to_dict(orient="records"))
 
     @app.route("/api/matriculas/rede")

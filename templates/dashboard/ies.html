@@ -238,8 +238,6 @@
             <tr>
               <th style="width:28px">#</th>
               <th>CURSO</th>
-              <th>MODALIDADE</th>
-              <th>GRAU</th>
               <th class="r">MATRÍCULAS</th>
               <th class="r">INGRESSANTES</th>
               <th class="r">CONCLUINTES</th>
@@ -382,8 +380,6 @@ async function abrirDetalhe(coIes, nomeIes, sigla, uf, org, mat, ing, conc, shar
         <tr>
           <td class="rnk ${['g','s','b'][i]||''}">${i+1}</td>
           <td style="font-size:.72rem">${r.curso}</td>
-          <td style="font-family:var(--mono);font-size:.64rem;color:var(--tx2)">—</td>
-          <td style="font-size:.64rem;color:var(--tx2)">—</td>
           <td class="num">${fmt(r.matriculas)}</td>
           <td class="num">${fmt(r.ingressantes)}</td>
           <td class="num">${fmt(r.concluintes)}</td>
@@ -445,7 +441,7 @@ async function loadAll() {
           <td class="num">${fmt(r.ingressantes)}</td>
           <td class="num">${fmt(r.concluintes)}</td>
           <td class="num" style="color:var(--amber)">—</td>
-          <td class="num" style="color:var(--cyan)">—</td>
+          <td class="num" style="color:var(--cyan)">${concl}</td>
           <td class="num" style="color:var(--green)">${r.market_share}%</td>
           <td style="padding:7px 14px">
             <div class="bar-t"><div class="bar-f" style="width:${(r.matriculas/maxMat*100).toFixed(1)}%"></div></div>
