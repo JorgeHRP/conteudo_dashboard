@@ -128,7 +128,6 @@
       <div class="tk-item"><span class="tk-lbl">ING</span><span class="tk-val pending" id="tk-ing">—</span></div>
       <div class="tk-item"><span class="tk-lbl">CONC</span><span class="tk-val pending" id="tk-conc">—</span></div>
       <div class="tk-item"><span class="tk-lbl">OCP</span><span class="tk-val pending" id="tk-ocp">—</span></div>
-      <div class="tk-item"><span class="tk-lbl">PERM</span><span class="tk-val pending" id="tk-perm">—</span></div>
     </div>
 
     <div class="tb-s">
@@ -182,7 +181,6 @@ async function loadTicker() {
     set('tk-ing',  _k(d.total_ingressantes));
     set('tk-conc', _k(d.total_concluintes));
     set('tk-ocp',  d.taxa_ocupacao + '%');
-    set('tk-perm', d.taxa_permanencia + '%');
   } catch(e) { console.warn('ticker:', e); }
 }
 loadTicker();

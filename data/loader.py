@@ -19,15 +19,21 @@ _evolucao: pd.DataFrame | None = None
 _lock      = threading.Lock()
 _ready     = threading.Event()
 
-# ── Mapa de modalidade ──────────────────────────────────────────────────
-MODALIDADE_MAP = {"1": "Presencial", "2": "EAD", "3": "Semi-presencial"}
+# ── Mapas ───────────────────────────────────────────────────────────────
+MODALIDADE_MAP = {"1": "Presencial", "2": "EAD"}
 
-# ── Mapa de tipo de rede ────────────────────────────────────────────────
 REDE_MAP = {
+    "1": "Pública",
+    "2": "Privada",
+}
+
+CATEGORIA_MAP = {
     "1": "Federal",
     "2": "Estadual",
     "3": "Municipal",
     "4": "Privada",
+    "5": "Privada (comunitária)",
+    "7": "Especial",
 }
 
 # ── Loader interno ─────────────────────────────────────────────────────
@@ -39,27 +45,30 @@ def _load():
     evo = pd.read_parquet(F_EVO)
 
     # ── Normaliza tipos — cursos ───────────────────────────────────────
-    cur["TP_MODALIDADE_ENSINO"] = cur["TP_MODALIDADE_ENSINO"].astype(str)
-    cur["TP_REDE"]              = cur["TP_REDE"].astype(str)
-    cur["CO_IES"]               = cur["CO_IES"].astype(str)
-    ies["CO_IES"]               = ies["CO_IES"].astype(str)
+    for col in ["TP_MODALIDADE_ENSINO", "TP_REDE", "TP_CATEGORIA_ADMINISTRATIVA",
+                "TP_GRAU_ACADEMICO", "TP_ORGANIZACAO_ACADEMICA", "CO_IES"]:
+        if col in cur.columns:
+            cur[col] = cur[col].astype(str)
+
+    ies["CO_IES"] = ies["CO_IES"].astype(str)
 
     # ── Colunas numéricas — garante int ────────────────────────────────
-    for col in ["QT_MAT", "QT_ING", "QT_CONC", "QT_VG_TOTAL",
-                "QT_MAT_FEM", "QT_MAT_MASC"]:
+    NUM_COLS = ["QT_MAT", "QT_ING", "QT_CONC", "QT_VG_TOTAL",
+                "QT_MAT_FEM", "QT_MAT_MASC",
+                "QT_ING_FEM", "QT_ING_MASC",
+                "QT_CONC_FEM", "QT_CONC_MASC"]
+    for col in NUM_COLS:
         if col in cur.columns:
             cur[col] = pd.to_numeric(cur[col], errors="coerce").fillna(0).astype(int)
 
-    # ── Join cursos ↔ IES ──────────────────────────────────────────────
-    ies_join = ies[["CO_IES", "NO_IES", "SG_IES",
-                    "TP_ORGANIZACAO_ACADEMICA", "NO_REGIAO_IES",
-                    "NO_MUNICIPIO_IES", "SG_UF_IES"]].copy()
-    cur = cur.merge(ies_join, on="CO_IES", how="left", suffixes=("", "_ies"))
+    # ── Microrregião via IES (cursos não tem essa coluna) ──────────────
+    if "NO_MICRORREGIAO_IES" in ies.columns and "NO_MICRORREGIAO" not in cur.columns:
+        micro_map = ies.set_index("CO_IES")["NO_MICRORREGIAO_IES"].to_dict()
+        cur["NO_MICRORREGIAO"] = cur["CO_IES"].map(micro_map)
 
-    if "NO_MICRORREGIAO" not in cur.columns:
-        cur["NO_MICRORREGIAO"] = cur.get("NO_MUNICIPIO", pd.Series(dtype=str))
-
-    cur["TP_REDE_LABEL"] = cur["TP_REDE"].map(REDE_MAP).fillna("Outro")
+    # ── Labels derivados ───────────────────────────────────────────────
+    cur["TP_REDE_LABEL"]      = cur["TP_REDE"].map(REDE_MAP).fillna("Outro")
+    cur["TP_CATEGORIA_LABEL"] = cur["TP_CATEGORIA_ADMINISTRATIVA"].map(CATEGORIA_MAP).fillna("Outro")
 
     # ── Normaliza tipos — evolução ─────────────────────────────────────
     evo["NU_ANO_CENSO"]         = evo["NU_ANO_CENSO"].astype(str)
@@ -123,6 +132,7 @@ def aplicar_filtros(df: pd.DataFrame, params: dict, prefixo: str = "") -> pd.Dat
         "modalidade":    "TP_MODALIDADE_ENSINO",
         "area":          "NO_CINE_AREA_GERAL",
         "rede":          "TP_REDE",
+        "categoria":     "TP_CATEGORIA_ADMINISTRATIVA",
         "grau":          "TP_GRAU_ACADEMICO",
         "org_academica": "TP_ORGANIZACAO_ACADEMICA",
         "microrregiao":  "NO_MICRORREGIAO",
@@ -139,6 +149,7 @@ def aplicar_filtros(df: pd.DataFrame, params: dict, prefixo: str = "") -> pd.Dat
             "uf":            "SG_UF_IES",
             "regiao":        "NO_REGIAO_IES",
             "org_academica": "TP_ORGANIZACAO_ACADEMICA",
+            "categoria":     "TP_CATEGORIA_ADMINISTRATIVA",
             "co_ies":        "CO_IES",
             "no_ies":        "NO_IES",
             "sg_ies":        "SG_IES",

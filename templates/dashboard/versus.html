@@ -415,12 +415,12 @@ function renderTaxas() {
   const ctx = document.getElementById('c-vs-taxa');
   if (!ctx) return;
 
-  const labels   = ['Ocupação %','Permanência %','Conclusão %'];
+  const labels   = ['Ocupação %','Conclusão %'];
   const c        = getThemeColors();
 
   const datasets = _resultados.map(r => ({
     label:           r.sigla || r.label,
-    data:            [r.kpis.taxa_ocupacao, r.kpis.taxa_permanencia, r.kpis.taxa_conclusao],
+    data:            [r.kpis.taxa_ocupacao, r.kpis.taxa_conclusao],
     backgroundColor: r.color + 'b0',
     borderColor:     r.color,
     borderWidth:     1,
@@ -467,9 +467,8 @@ function renderRadar() {
     { key:'total_matriculas',   label:'Matrículas' },
     { key:'total_ingressantes', label:'Ingressantes' },
     { key:'total_concluintes',  label:'Concluintes' },
-    { key:'taxa_ocupacao',      label:'Ocupação' },
-    { key:'taxa_permanencia',   label:'Permanência' },
-    { key:'taxa_conclusao',     label:'Conclusão' },
+    { key:'taxa_ocupacao',  label:'Ocupação' },
+    { key:'taxa_conclusao', label:'Conclusão' },
   ];
 
   const maxes = keys.map(k =>

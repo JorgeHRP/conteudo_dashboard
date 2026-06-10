@@ -92,11 +92,6 @@
   </div>
   <div class="ov-sep"></div>
   <div class="ov-item">
-    <span class="ov-lbl">TAXA PERMANÊNCIA</span>
-    <span class="ov-val" id="s-perm" style="color:var(--cyan)">—</span>
-  </div>
-  <div class="ov-sep"></div>
-  <div class="ov-item">
     <span class="ov-lbl">TAXA CONCLUSÃO</span>
     <span class="ov-val" id="s-crat" style="color:var(--amber)">—</span>
   </div>
@@ -175,11 +170,6 @@
         <div class="mtag">OCUPAÇÃO</div>
         <div class="mval g pending" id="m-ocp">—</div>
         <div class="mdesc">ing / vagas</div>
-      </div>
-      <div class="mbox">
-        <div class="mtag">PERMANÊNCIA</div>
-        <div class="mval c pending" id="m-perm">—</div>
-        <div class="mdesc">mat / ing</div>
       </div>
       <div class="mbox">
         <div class="mtag">CONCLUSÃO</div>
@@ -364,15 +354,13 @@ async function loadKPIs(q) {
   document.getElementById('k-ocpsub').textContent = 'ocupação ' + d.taxa_ocupacao + '%';
 
   // Taxa bar
-  set('s-ocp',  d.taxa_ocupacao   + '%');
-  set('s-perm', d.taxa_permanencia + '%');
-  set('s-crat', d.taxa_conclusao   + '%');
+  set('s-ocp',  d.taxa_ocupacao  + '%');
+  set('s-crat', d.taxa_conclusao + '%');
 
   // Metric boxes
-  set('m-ocp',  d.taxa_ocupacao    + '%');
-  set('m-perm', d.taxa_permanencia + '%');
-  set('m-conc', d.taxa_conclusao   + '%');
-  ['m-ocp','m-perm','m-conc'].forEach(id => {
+  set('m-ocp',  d.taxa_ocupacao  + '%');
+  set('m-conc', d.taxa_conclusao + '%');
+  ['m-ocp','m-conc'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.classList.remove('pending');
   });
@@ -390,8 +378,6 @@ async function loadKPIs(q) {
   setTicker('tk-ing',  fmtK(d.total_ingressantes));
   setTicker('tk-conc', fmtK(d.total_concluintes));
   setTicker('tk-ocp',  d.taxa_ocupacao   + '%');
-  setTicker('tk-perm', d.taxa_permanencia + '%');
-
   document.querySelectorAll('.kpi-cell').forEach((c, i) =>
     setTimeout(() => c.classList.add('lit'), i * 70)
   );
@@ -441,8 +427,7 @@ async function loadCharts(q) {
 
   // Rede
   showC('l-rede', 'c-rede');
-  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'dl-rede',
-    ['#22d3ee','#a78bfa','#f59e0b','#f87171']);
+  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'dl-rede');
 
   // Grau acadêmico
   showC('l-grau', 'c-grau');
@@ -483,8 +468,8 @@ async function loadCharts(q) {
 async function loadAll() {
   // Reseta KPIs
   ['k-mat','k-ing','k-conc','k-vagas','k-cursos','k-ies',
-   's-ocp','s-perm','s-crat','s-fem','s-masc',
-   'm-ocp','m-perm','m-conc'].forEach(id => {
+   's-ocp','s-crat','s-fem','s-masc',
+   'm-ocp','m-conc'].forEach(id => {
     const e = document.getElementById(id);
     if (e) { e.classList.add('pending'); e.textContent = '—'; }
   });

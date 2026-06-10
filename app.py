@@ -36,7 +36,7 @@ def create_app():
     def get_filters():
         """Lê todos os parâmetros de filtro da query string."""
         return {k: request.args.get(k) for k in [
-            "regiao", "uf", "modalidade", "area", "rede",
+            "regiao", "uf", "modalidade", "area", "rede", "categoria",
             "grau", "org_academica", "microrregiao", "municipio",
             "co_ies", "no_ies", "sg_ies", "tipo_ies", "no_curso",
         ]}
@@ -44,10 +44,15 @@ def create_app():
     def kpi_data(params):
         df  = aplicar_filtros(get_cursos(), params)
         ies = aplicar_filtros(get_ies(),    params, prefixo="ies")
-        vagas = int(df["QT_VG_TOTAL"].sum()) if "QT_VG_TOTAL" in df.columns else 0
         ing   = int(df["QT_ING"].sum())
         mat   = int(df["QT_MAT"].sum())
         conc  = int(df["QT_CONC"].sum())
+        # Vagas: soma total (maioria das IES não informa — campo opcional no censo)
+        vagas = int(df["QT_VG_TOTAL"].sum()) if "QT_VG_TOTAL" in df.columns else 0
+        # Taxa de ocupação: só sobre cursos que reportaram vagas (95,8% têm vagas=0)
+        df_v  = df[df["QT_VG_TOTAL"] > 0] if "QT_VG_TOTAL" in df.columns else df.iloc[0:0]
+        vagas_rep = int(df_v["QT_VG_TOTAL"].sum())
+        ing_rep   = int(df_v["QT_ING"].sum())
         return {
             "total_matriculas":   mat,
             "total_ingressantes": ing,
@@ -55,9 +60,8 @@ def create_app():
             "total_vagas":        vagas,
             "total_cursos":       int(df["NO_CURSO"].nunique()) if "NO_CURSO" in df.columns else len(df),
             "total_ies":          len(ies),
-            "taxa_ocupacao":      round(ing  / vagas * 100, 2) if vagas else 0,
-            "taxa_permanencia":   round(mat  / ing   * 100, 2) if ing   else 0,
-            "taxa_conclusao":     round(conc / mat   * 100, 2) if mat   else 0,
+            "taxa_ocupacao":      round(ing_rep / vagas_rep * 100, 2) if vagas_rep else 0,
+            "taxa_conclusao":     round(conc / mat * 100, 2) if mat else 0,
         }
 
     # ─── AUTH ────────────────────────────────────────────────
@@ -118,6 +122,7 @@ def create_app():
             "areas":         _uniq(cursos, "NO_CINE_AREA_GERAL"),
             "graus":         _uniq(cursos, "TP_GRAU_ACADEMICO"),
             "redes":         _uniq(cursos, "TP_REDE_LABEL"),
+            "categorias":    _uniq(cursos, "TP_CATEGORIA_LABEL"),
             "org_academica": _uniq(ies,    "TP_ORGANIZACAO_ACADEMICA"),
             "ies_lista": (
                 ies[["CO_IES", "NO_IES", "SG_IES"]]
@@ -272,9 +277,9 @@ def create_app():
     @app.route("/api/matriculas/rede")
     @auth.login_required
     def api_matriculas_rede():
-        """Distribuição por rede (Federal, Estadual, Municipal, Privada)."""
+        """Distribuição por categoria administrativa (Federal/Estadual/Municipal/Privada)."""
         df = aplicar_filtros(get_cursos(), get_filters())
-        r  = df.groupby("TP_REDE_LABEL")["QT_MAT"].sum().reset_index()
+        r  = df.groupby("TP_CATEGORIA_LABEL")["QT_MAT"].sum().reset_index()
         r.columns = ["rede", "matriculas"]
         return jsonify(r.sort_values("matriculas", ascending=False).to_dict(orient="records"))
 
@@ -353,8 +358,8 @@ def create_app():
     def api_ingressantes_genero():
         df = aplicar_filtros(get_cursos(), get_filters())
         return jsonify([
-            {"genero": "Feminino",  "valor": int(df["QT_MAT_FEM"].sum())},
-            {"genero": "Masculino", "valor": int(df["QT_MAT_MASC"].sum())},
+            {"genero": "Feminino",  "valor": int(df["QT_ING_FEM"].sum())},
+            {"genero": "Masculino", "valor": int(df["QT_ING_MASC"].sum())},
         ])
 
     # ─── CONCLUINTES ─────────────────────────────────────────
@@ -431,8 +436,8 @@ def create_app():
     def api_concluintes_genero():
         df = aplicar_filtros(get_cursos(), get_filters())
         return jsonify([
-            {"genero": "Feminino",  "valor": int(df["QT_MAT_FEM"].sum())},
-            {"genero": "Masculino", "valor": int(df["QT_MAT_MASC"].sum())},
+            {"genero": "Feminino",  "valor": int(df["QT_CONC_FEM"].sum())},
+            {"genero": "Masculino", "valor": int(df["QT_CONC_MASC"].sum())},
         ])
 
     # ─── EVOLUÇÃO CENSAL (2020-2024) ─────────────────────────

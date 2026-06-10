@@ -381,8 +381,7 @@ async function loadAll() {
   mkDonut('c-grau', grau.map(r => r.grau),        grau.map(r => r.matriculas), 'leg-grau');
 
   showC('l-rede', 'c-rede');
-  mkDonut('c-rede', rede.map(r => r.rede),         rede.map(r => r.matriculas), 'leg-rede',
-    ['#22d3ee','#a78bfa','#f59e0b','#f87171']);
+  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'leg-rede');
 
   // ── Ingressantes por área ─────────────────────────────────────────
   showC('l-ing-area', 'c-ing-area');

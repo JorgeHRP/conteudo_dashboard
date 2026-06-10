@@ -377,8 +377,7 @@ async function loadAll() {
 
   // ── Rede donut ────────────────────────────────────────────────
   showC('l-rede', 'c-rede');
-  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'leg-rede',
-    ['#22d3ee','#a78bfa','#f59e0b','#f87171']);
+  mkDonut('c-rede', rede.map(r => r.rede), rede.map(r => r.matriculas), 'leg-rede');
 
   // ── Gênero donut ──────────────────────────────────────────────
   const g = await fetch('/api/matriculas/genero' + q).then(r => r.json());
